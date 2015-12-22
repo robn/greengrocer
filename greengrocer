@@ -118,7 +118,7 @@ sub daemon {
 
 sub search {
     local @ARGV = @_;
-    getopts('s:e:', \my %opts);
+    getopts('s:e:j', \my %opts);
 
     my $now = time;
     my $start_date = time2str("%Y%m%d", str2time($opts{s}) // $now);
@@ -140,7 +140,7 @@ sub search {
         searchers => \@searchers,
     );
 
-    my $collector = greengrocer::HitCollector->new(searcher => $searcher);
+    my $collector = greengrocer::HitCollector->new(searcher => $searcher, json => !!$opts{j});
 
     do {
         no warnings 'uninitialized'; # working around slight bug inside Lucy
@@ -214,6 +214,7 @@ Searches for log lines matching the given query.
 Options:
     -s <date> - start date to search (inclusive) [default: today]
     -e <date> - end date to search (exclusive) [default: tomorrow]
+    -j        - JSON output
 USAGE
     }
     else {
@@ -238,6 +239,7 @@ USAGE
 package greengrocer::HitCollector;
 
 use parent qw(Lucy::Search::Collector);
+use JSON::XS;
 
 our %self;
 
@@ -249,23 +251,49 @@ sub new {
     $self{$ref} = {
         searcher => $args{searcher},
         base     => 0,
+        json     => $args{json},
     };
 
     return $ref;
 }
 
 sub DESTROY {
-    delete $self{shift};
+    my ($ref) = @_;
+    my $self = delete $self{$ref};
+    say "\n]" if $self->{json};
+}
+
+sub _output_text {
+    my ($self, $doc) = @_;
+    my ($timestamp, $host, $program, $pid, $message) = map { $doc->{$_} } qw(timestamp host program pid message);
+    $pid = "[$pid]" if $pid;
+    printf "%s %s %s%s:%s\n", $timestamp, $host, $program, $pid, $message;
+}
+
+sub _output_json {
+    my ($self, $doc) = @_;
+
+    unless ($self->{started}) {
+        say '[';
+        $self->{started} = 1;
+    }
+    else {
+        say ',';
+    }
+
+    print '  ', encode_json({ map { $_ => $doc->{$_} } qw(timestamp host program pid message) });
 }
 
 sub collect {
     my ($ref, $doc_id) = @_;
     my $self = $self{$ref};
-
     my $doc = $self->{searcher}->fetch_doc($self->{base} + $doc_id);
-    my ($timestamp, $host, $program, $pid, $message) = map { $doc->{$_} } qw(timestamp host program pid message);
-    $pid = "[$pid]" if $pid;
-    printf "%s %s %s%s:%s\n", $timestamp, $host, $program, $pid, $message;
+    if ($self->{json}) {
+        _output_json($self, $doc);
+    }
+    else {
+        _output_text($self, $doc);
+    }
 }
 
 sub set_base {
