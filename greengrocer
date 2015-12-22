@@ -21,7 +21,7 @@ my $INDEX_DIR = $OPTS{d};
 
 my $ACTION = shift @ARGV;
 my $handler = {
-    daemon => \&daemon,
+    agent  => \&agent,
     search => \&search,
 }->{$ACTION // ''};
 
@@ -32,7 +32,7 @@ path($INDEX_DIR)->mkpath;
 
 $handler->(@ARGV);
 
-sub daemon {
+sub agent {
     local @ARGV = @_;
     getopts('l:p:', \my %opts);
 
@@ -193,11 +193,11 @@ sub schema {
 sub usage {
     my $action = $ACTION // '';
 
-    if ($action eq 'daemon') {
+    if ($action eq 'agent') {
         print STDERR <<USAGE;
-Usage: greengrocer -d <index-dir> daemon [opts...]
+Usage: greengrocer -d <index-dir> agent [opts...]
 
-Starts the log collection daemon. The daemon itself will log info about
+Starts the log collection agent. The agent itself will log info about
 its activities to standard error.
 
 Options:
@@ -225,7 +225,7 @@ Global options:
     -d <index-dir> - location to store indexes
 
 Actions:
-    daemon - run the log collection daemon
+    agent  - run the log collection agent 
     search - show log lines matching a query
 
 For more help on action: greengrocer <action> -h

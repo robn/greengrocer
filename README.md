@@ -12,7 +12,7 @@ A log collector and search engine
 
 ```
 $ cpanm Lucy Path::Tiny AnyEvent Date::Format Date::Parse JSON::XS
-$ ./greengrocer -d /tmp/greengrocer daemon
+$ ./greengrocer -d /tmp/greengrocer agent
 ```
 
 Then in your `rsyslog.conf`:
@@ -22,10 +22,10 @@ $template greengrocer,"{%msg:::jsonf:message%,%HOSTNAME:::jsonf:host%,%timerepor
 *.* @@127.0.0.1:5514;greengrocer
 ```
 
-Back where you ran the daemon, you should start to see it receiving log lines:
+Back where you ran the agent, you should start to see it receiving log lines:
 
 ```
-$ ./greengrocer -d /tmp/greengrocer daemon
+$ ./greengrocer -d /tmp/greengrocer agent
 [greengrocer] 2015-12-22T00:03:34 0.0.0.0:5514 listening
 [greengrocer] 2015-12-22T00:03:43 127.0.0.1:43195 connect
 [greengrocer] 2015-12-22T00:03:44 indexed 51 lines
