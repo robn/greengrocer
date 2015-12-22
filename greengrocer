@@ -239,37 +239,39 @@ package greengrocer::HitCollector;
 
 use parent qw(Lucy::Search::Collector);
 
-our %searchers;
-our %base;
+our %self;
 
 sub new {
     my ($class, %args) = @_;
 
-    my $self = $class->SUPER::new;
-    $searchers{$self} = $args{searcher};
-    $base{$self} = 0;
+    my $ref = $class->SUPER::new;
 
-    return $self;
+    $self{$ref} = {
+        searcher => $args{searcher},
+        base     => 0,
+    };
+
+    return $ref;
 }
 
 sub DESTROY {
-    my ($self) = @_;
-    delete $searchers{$self};
-    delete $base{$self};
+    delete $self{shift};
 }
 
 sub collect {
-    my ($self, $doc_id) = @_;
+    my ($ref, $doc_id) = @_;
+    my $self = $self{$ref};
 
-    my $doc = $searchers{$self}->fetch_doc($base{$self} + $doc_id);
+    my $doc = $self->{searcher}->fetch_doc($self->{base} + $doc_id);
     my ($timestamp, $host, $program, $pid, $message) = map { $doc->{$_} } qw(timestamp host program pid message);
     $pid = "[$pid]" if $pid;
     printf "%s %s %s%s:%s\n", $timestamp, $host, $program, $pid, $message;
 }
 
 sub set_base {
-    my ($self, $base) = @_;
-    $base{$self} = $base;
+    my ($ref, $base) = @_;
+    my $self = $self{$ref};
+    $self->{base} = $base;
 }
 
 sub need_score { 0 }
