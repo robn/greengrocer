@@ -189,9 +189,9 @@ sub schema {
 }
 
 sub usage {
-    my ($action) = @_;
+    my $action = $ACTION // '';
 
-    if ($ACTION eq 'daemon') {
+    if ($action eq 'daemon') {
         print STDERR <<USAGE;
 Usage: greengrocer -d <index-dir> daemon [opts...]
 
@@ -203,7 +203,7 @@ Options:
     -p <port> - port to listen on [default: 5514]
 USAGE
     }
-    elsif ($ACTION eq 'search') {
+    elsif ($action eq 'search') {
         print STDERR <<USAGE;
 Usage: greengrocer -d <index-dir> search [opts...] <query...>
 
