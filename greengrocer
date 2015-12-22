@@ -260,7 +260,14 @@ sub new {
 sub DESTROY {
     my ($ref) = @_;
     my $self = delete $self{$ref};
-    say "\n]" if $self->{json};
+    if ($self->{json}) {
+        if ($self->{started}) {
+            say "\n]";
+        }
+        else {
+            say "[]";
+        }
+    }
 }
 
 sub _output_text {
