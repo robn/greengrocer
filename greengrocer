@@ -57,21 +57,20 @@ sub daemon {
             my %indexers;
 
             for my $data (@queue) {
-                @$data{qw(program pid)} = delete($data->{syslogtag}) =~ m/([^\[]+)\[(\d+)\]/;
+                @$data{qw(program pid)} = delete($data->{syslogtag}) =~ m/^([^\[]+)(?:\[(\d+)\])?:$/;
+                $data->{pid} //= '';
+
                 my ($y, $m, $d) = split '-', substr($data->{timestamp}, 0, 10);
                 unless ($y && $m && $d) {
                     $log->("E: malformed timestamp: $data->{timestamp}");
                 }
                 my $key = "$y$m$d";
 
-                do {
-                    no warnings 'uninitialized'; # working around slight bug inside Lucy
-                    ($indexers{$key} ||= Lucy::Index::Indexer->new(
-                        index    => path($INDEX_DIR, $key),
-                        schema => schema(),
-                        create => 1,
-                    ))->add_doc($data);
-                };
+                ($indexers{$key} ||= Lucy::Index::Indexer->new(
+                    index    => path($INDEX_DIR, $key),
+                    schema => schema(),
+                    create => 1,
+                ))->add_doc($data);
             }
 
             for my $indexer (values %indexers) {
@@ -263,7 +262,9 @@ sub collect {
     my ($self, $doc_id) = @_;
 
     my $doc = $searchers{$self}->fetch_doc($base{$self} + $doc_id);
-    printf "%s %s %s[%s]:%s\n", map { $doc->{$_} } qw(timestamp host program pid message);
+    my ($timestamp, $host, $program, $pid, $message) = map { $doc->{$_} } qw(timestamp host program pid message);
+    $pid = "[$pid]" if $pid;
+    printf "%s %s %s%s:%s\n", $timestamp, $host, $program, $pid, $message;
 }
 
 sub set_base {
