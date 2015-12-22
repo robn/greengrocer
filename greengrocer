@@ -64,11 +64,14 @@ sub daemon {
                 }
                 my $key = "$y$m$d";
 
-                ($indexers{$key} ||= Lucy::Index::Indexer->new(
-                    index    => path($INDEX_DIR, $key),
-                    schema => schema(),
-                    create => 1,
-                ))->add_doc($data);
+                do {
+                    no warnings 'uninitialized'; # working around slight bug inside Lucy
+                    ($indexers{$key} ||= Lucy::Index::Indexer->new(
+                        index    => path($INDEX_DIR, $key),
+                        schema => schema(),
+                        create => 1,
+                    ))->add_doc($data);
+                };
             }
 
             for my $indexer (values %indexers) {
