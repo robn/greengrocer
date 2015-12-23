@@ -22,8 +22,9 @@ my $INDEX_DIR = $OPTS{d};
 
 my $ACTION = shift @ARGV;
 my $handler = {
-    agent  => \&agent,
-    search => \&search,
+    agent    => \&agent,
+    search   => \&search,
+    optimize => \&optimize,
 }->{$ACTION // ''};
 
 say STDERR "E: unknown action: $ACTION" if $ACTION && !$handler;
@@ -173,6 +174,31 @@ sub search {
     };
 }
 
+sub optimize {
+    local @ARGV = @_;
+
+    for my $index (@ARGV) {
+        my $indexer = eval {
+            Lucy::Index::Indexer->new(
+                index  => path($INDEX_DIR, $index),
+                schema => schema(),
+            );
+        };
+        if ($@) {
+            warn "E: couldn't open index $index, skipping\n";
+            next;
+        }
+
+        print STDERR "indexing $index... ";
+        STDERR->flush;
+
+        $indexer->optimize;
+        $indexer->commit;
+
+        say STDERR "done";
+    }
+}
+
 sub schema {
     # {"pid":"4090299","timestamp":"2015-12-21T18:47:30.697022-05:00","program":"sloti30t15/calalarmd","host":"imap30","message":" processing alarms"}
 
@@ -240,6 +266,21 @@ Options:
     -j        - JSON output
 USAGE
     }
+    elsif ($action eq 'optimize') {
+        print STDERR <<USAGE;
+Usage: greengrocer -d <index-dir> optimize <indexes...>
+
+Optimizes a indexes for fast searching. Indexes can become fragmented after a
+lot of writes, which can make searching slower. Optimizing reprocesses the log
+lines into a new unfragmented index which takes less effort to search. It
+usually won't make the index significantly smaller.
+
+Optimizing an index can take a long time (minutes) and locks the index for
+writing, so new log entries cannot be added. For this reason don't try to
+optimize an active index (that is, today's) or you'll likely end up losing
+incoming log lines.
+USAGE
+    }
     else {
         print STDERR <<USAGE;
 Usage: greengrocer -d <index-dir> <action> [opts...]
@@ -248,8 +289,9 @@ Global options:
     -d <index-dir> - location to store indexes
 
 Actions:
-    agent  - run the log collection agent 
-    search - show log lines matching a query
+    agent    - run the log collection agent
+    search   - show log lines matching a query
+    optimize - optimize indexes for searching
 
 For more help on action: greengrocer <action> -h
 USAGE
