@@ -14,6 +14,7 @@ use AnyEvent::Handle;
 use Date::Format qw(time2str);
 use Date::Parse qw(str2time);
 use Getopt::Std qw(getopts);
+use Time::HiRes qw(gettimeofday tv_interval);
 
 getopts('d:h', \my %OPTS);
 
@@ -56,6 +57,10 @@ sub agent {
 
             my %indexers;
 
+            my ($t_start, $t_add, $t_commit);
+
+            $t_start = [gettimeofday];
+
             for my $data (@queue) {
                 @$data{qw(program pid)} = delete($data->{syslogtag}) =~ m/^([^\[]+)(?:\[(\d+)\])?:$/;
                 $data->{pid} //= '';
@@ -73,11 +78,24 @@ sub agent {
                 ))->add_doc($data);
             }
 
+            $t_add = [gettimeofday];
+
             for my $indexer (values %indexers) {
                 $indexer->commit;
             };
 
-            $log->("indexed ".scalar(@queue)." lines");
+            $t_commit = [gettimeofday];
+
+            my $e_add     = tv_interval($t_start, $t_add);
+            my $e_commit  = tv_interval($t_add, $t_commit);
+
+            my $n_items = scalar @queue;
+
+            my $r_add    = $e_add / $n_items;
+            my $r_commit = $e_commit / $n_items;
+
+            $log->("indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
+
             undef @queue;
         },
     );
