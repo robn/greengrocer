@@ -29,6 +29,7 @@ my $handler = {
     agent    => \&agent,
     search   => \&search,
     optimize => \&optimize,
+    web      => \&web,
 }->{$ACTION // ''};
 
 say STDERR "E: unknown action: $ACTION" if $ACTION && !$handler;
@@ -45,11 +46,7 @@ sub agent {
     my $ip = $opts{l} // '0.0.0.0';
     my $port = $opts{p} // 5514;
 
-    AnyEvent::Log::ctx->log_to_warn;
-    AnyEvent::Log::ctx->fmt_cb(sub {
-            sprintf "[greengrocer] %s %s\n", time2str("%Y-%m-%dT%H:%M:%S", time), $_[3];
-    });
-    my $log = AnyEvent::Log::logger("notice");
+    my $log = logger();
 
     my $cv = AnyEvent::condvar;
 
@@ -167,35 +164,20 @@ sub search {
     local @ARGV = @_;
     getopts('s:e:j', \my %opts);
 
-    my $now = time;
-    my $start_date = time2str("%Y%m%d", str2time($opts{s}) // $now);
-    my $end_date     = time2str("%Y%m%d", str2time($opts{e}) // ($now+86400));
-    if ($start_date ge $end_date) {
-        say STDERR "E: invalid date range $start_date - $end_date";
-        usage();
-    }
-
-    my $query_parser = Lucy::Search::QueryParser->new(schema => schema());
-    $query_parser->set_heed_colons(1);
-    my $query = $query_parser->parse(join ' ', @ARGV);
-
-    my $top_dir = path($INDEX_DIR);
-    my @indexes = grep { my $basename = $_->basename; $basename >= $start_date && $basename < $end_date } $top_dir->children;
-    my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
-    my $searcher = Lucy::Search::PolySearcher->new(
-        schema => schema(),
-        searchers => \@searchers,
+    run_search(
+        start     => $opts{s},
+        end       => $opts{e},
+        query     => join(' ', @ARGV),
+        collector => sub {
+            my ($searcher, $query) = @_;
+            greengrocer::CLICollector->new(searcher => $searcher, json => !!$opts{j}),
+        },
+        error => sub {
+            my ($msg) = @_;
+            say STDERR "E: $msg";
+            usage();
+        },
     );
-
-    my $collector = greengrocer::HitCollector->new(searcher => $searcher, json => !!$opts{j});
-
-    do {
-        no warnings 'uninitialized'; # working around slight bug inside Lucy
-        $searcher->collect(
-            query => $query,
-            collector => $collector,
-        );
-    };
 }
 
 sub optimize {
@@ -221,6 +203,41 @@ sub optimize {
 
         say STDERR "done";
     }
+}
+
+sub web {
+    my @modules = qw(Twiggy Atto);
+    my @missing = grep { ! eval "require $_" } qw(Twiggy::Server Atto);
+    if (@missing) {
+        say STDERR "E: the web server requires these additional modules: @modules";
+        say STDERR "E: try running: cpanm @modules";
+        exit 1;
+    }
+
+    local @ARGV = @_;
+    getopts('l:p:', \my %opts);
+
+    my $ip = $opts{l} // '0.0.0.0';
+    my $port = $opts{p} // 5515;
+
+    my $log = logger();
+
+    my $cv = AnyEvent::condvar;
+
+    my $server = Twiggy::Server->new(host => $ip, port => $port);
+    $server->register_service(greengrocer::SearchServer->psgi(logger => $log));
+
+    $log->("$ip:$port listening");
+
+    $cv->recv;
+}
+
+sub logger {
+    AnyEvent::Log::ctx->log_to_warn;
+    AnyEvent::Log::ctx->fmt_cb(sub {
+            sprintf "[greengrocer] %s %s\n", time2str("%Y-%m-%dT%H:%M:%S", time), $_[3];
+    });
+    AnyEvent::Log::logger("notice");
 }
 
 sub schema {
@@ -262,6 +279,40 @@ sub schema {
     return $schema;
 }
 
+sub run_search {
+    my (%args) = @_;
+
+    my $now = time;
+    my $start_date = time2str("%Y%m%d", str2time($args{start}) // $now);
+    my $end_date   = time2str("%Y%m%d", str2time($args{end}) // ($now+86400));
+    if ($start_date ge $end_date) {
+        $args{error}->("invalid date range $start_date - $end_date");
+        return;
+    }
+
+    my $query_parser = Lucy::Search::QueryParser->new(schema => schema());
+    $query_parser->set_heed_colons(1);
+    my $query = $query_parser->parse($args{query} // '');
+
+    my $top_dir = path($INDEX_DIR);
+    my @indexes = grep { my $basename = $_->basename; $basename >= $start_date && $basename < $end_date } $top_dir->children;
+    my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
+    my $searcher = Lucy::Search::PolySearcher->new(
+        schema => schema(),
+        searchers => \@searchers,
+    );
+
+    my $collector = $args{collector}->($searcher, $query);
+
+    do {
+        no warnings 'uninitialized'; # working around slight bug inside Lucy
+        $searcher->collect(
+            query => $query,
+            collector => $collector,
+        );
+    };
+}
+
 sub usage {
     my $action = $ACTION // '';
 
@@ -290,6 +341,30 @@ Options:
     -j        - JSON output
 USAGE
     }
+    elsif ($action eq 'web') {
+        print STDERR <<USAGE;
+Usage: greengrocer -d <index-dir> web [opts...]
+
+Starts the web search API server. The server will log requests to standard
+error.
+
+Options:
+    -l <ip>       - IP address to listen on [default: all]
+    -p <port>     - port to listen on [default: 5515]
+
+To run a search, make a web request to the /search endpoint with the following
+query parameters:
+
+    start - start date to search (inclusive) [default: today]
+    end   - end date to search (exclusive) [default: tomorrow]
+    query - query string
+
+Example:
+
+    \$ curl http://127.0.0.1:5515/search?query=info
+
+USAGE
+    }
     elsif ($action eq 'optimize') {
         print STDERR <<USAGE;
 Usage: greengrocer -d <index-dir> optimize <indexes...>
@@ -315,6 +390,7 @@ Global options:
 Actions:
     agent    - run the log collection agent
     search   - show log lines matching a query
+    web      - run the web search API server
     optimize - optimize indexes for searching
 
 For more help on action: greengrocer <action> -h
@@ -325,7 +401,7 @@ USAGE
 }
 
 
-package greengrocer::HitCollector;
+package greengrocer::CLICollector;
 
 use parent qw(Lucy::Search::Collector);
 use JSON::XS;
@@ -399,3 +475,93 @@ sub set_base {
 }
 
 sub need_score { 0 }
+
+
+package greengrocer::ServerCollector;
+
+use parent qw(Lucy::Search::Collector);
+
+our %self;
+
+sub new {
+    my ($class, %args) = @_;
+
+    my $ref = $class->SUPER::new;
+
+    $self{$ref} = {
+        searcher => $args{searcher},
+        base     => 0,
+        results  => [],
+    };
+
+    return $ref;
+}
+
+sub results {
+    my ($ref) = @_;
+    my $self = $self{$ref};
+    $self->{results};
+}
+
+sub DESTROY {
+    my ($ref) = @_;
+    my $self = delete $self{$ref};
+}
+
+sub collect {
+    my ($ref, $doc_id) = @_;
+    my $self = $self{$ref};
+    my $doc = $self->{searcher}->fetch_doc($self->{base} + $doc_id);
+    push @{$self->{results}}, [ map { $_ => $doc->{$_} } qw(timestamp host program pid message) ];
+}
+
+sub set_base {
+    my ($ref, $base) = @_;
+    my $self = $self{$ref};
+    $self->{base} = $base;
+}
+
+sub need_score { 0 }
+
+
+package greengrocer::SearchServer;
+
+our $log;
+
+sub psgi {
+    my ($class, %args) = @_;
+    $log = $args{logger};
+
+    Atto->import(qw(search));
+    Atto->psgi;
+}
+
+sub search {
+    my (%args) = @_;
+
+    my $info = join(' ', map { "$_=$args{$_}" } sort keys %args);
+
+    my $collector;
+
+    greengrocer::run_search(
+        start     => $args{start},
+        end       => $args{end},
+        query     => $args{query},
+        collector => sub {
+            my ($searcher, $query) = @_;
+            $collector = greengrocer::ServerCollector->new(searcher => $searcher);
+            return $collector;
+        },
+        error => sub {
+            my ($msg) = @_;
+            $log->("search: $info [FAILED: $msg]");
+            die "E: $msg\n";
+        },
+    );
+
+    my $results = $collector->results;
+
+    $log->(sprintf "search: %s [results: %d]", join(' ', map { "$_=$args{$_}" } sort keys %args), scalar @$results);
+
+    return $results
+}
