@@ -9,12 +9,13 @@ use strict;
 use Lucy;
 use Path::Tiny;
 use AnyEvent::Log;
-use AnyEvent::Socket;
 use AnyEvent::Handle;
+use AnyEvent::Handle::UDP;
 use Date::Format qw(time2str);
 use Date::Parse qw(str2time);
 use Getopt::Std qw(getopts);
 use Time::HiRes qw(gettimeofday tv_interval);
+use JSON::XS qw(decode_json);
 
 getopts('d:h', \my %OPTS);
 
@@ -38,7 +39,7 @@ sub agent {
     local @ARGV = @_;
     getopts('l:p:i:', \my %opts);
 
-    my $ip = $opts{l};
+    my $ip = $opts{l} // '0.0.0.0';
     my $port = $opts{p} // 5514;
 
     AnyEvent::Log::ctx->log_to_warn;
@@ -105,34 +106,17 @@ sub agent {
         },
     );
 
-    tcp_server($ip, $port,
-        sub {
-            my ($fh, $host, $port) = @_;
-
-            $log->("$host:$port connect");
-
-            my $handle; $handle = AnyEvent::Handle->new(
-                fh => $fh,
-                on_error => sub {
-                    my $msg = pop @_;
-                    $handle->destroy;
-                    $log->("$host:$port error: $msg");
-                },
-                on_eof => sub {
-                    $handle->destroy;
-                    $log->("$host:$port disconnect");
-                },
-            );
-
-            my $reader; $reader = sub {
-                push @queue, $_[-1];
-                $handle->push_read(json => $reader);
-            };
-            $handle->push_read(json => $reader);
+    my $server_guard; $server_guard = AnyEvent::Handle::UDP->new(
+        bind => [$ip, $port],
+        on_recv => sub {
+            my ($data, $handle, $client_addr) = @_;
+            push @queue, decode_json($data);
         },
-        sub {
-            my ($fh, $host, $port) = @_;
-            $log->("$host:$port listening");
+        on_error => sub {
+            my ($handle, $is_fatal, $msg) = @_;
+            my $peer = $handle->getpeername;
+            $log->("$peer error: $msg");
+            $handle->destroy;
         },
     );
 

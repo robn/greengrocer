@@ -19,7 +19,7 @@ Then in your `rsyslog.conf`:
 
 ```
 $template greengrocer,"{%msg:::jsonf:message%,%HOSTNAME:::jsonf:host%,%timereported:::date-rfc3339,jsonf:timestamp%,%syslogtag:::jsonf:syslogtag%}"
-*.* @@127.0.0.1:5514;greengrocer
+*.* @127.0.0.1:5514;greengrocer
 ```
 
 Back where you ran the agent, you should start to see it receiving log lines:
