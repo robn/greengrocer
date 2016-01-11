@@ -512,7 +512,7 @@ sub collect {
     my ($ref, $doc_id) = @_;
     my $self = $self{$ref};
     my $doc = $self->{searcher}->fetch_doc($self->{base} + $doc_id);
-    push @{$self->{results}}, [ map { $_ => $doc->{$_} } qw(timestamp host program pid message) ];
+    push @{$self->{results}}, { map { $_ => $doc->{$_} } qw(timestamp host program pid message) };
 }
 
 sub set_base {
