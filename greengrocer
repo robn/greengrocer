@@ -110,7 +110,10 @@ sub agent {
         bind => [$ip, $port],
         on_recv => sub {
             my ($data, $handle, $client_addr) = @_;
-            push @queue, decode_json($data);
+            eval { push @queue, decode_json($data) };
+            if (my $err = $@) {
+                $log->("data error: $@: $data");
+            }
         },
         on_error => sub {
             my ($handle, $is_fatal, $msg) = @_;
