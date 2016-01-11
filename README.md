@@ -53,10 +53,25 @@ $ ./greengrocer -d /tmp/greengrocer web
 
 ```
 $ curl -s http://127.0.0.1:5515/search?query=robntest
-[
-  {"pid":"932691","timestamp":"2016-01-11T15:03:59.020292-05:00","message":" login: frontend2.nyi.internal [10.202.2.161] robntest plaintext User logged in SESSIONID=<sloti30t15-932691-1452542639-1-17409801321091060504>","program":"sloti30t15/imap","host":"imap30"},
-  {"pid":"932691","timestamp":"2016-01-11T15:04:02.062097-05:00","message":" login: frontend2.nyi.internal [10.202.2.161] robntest plaintext User logged in SESSIONID=<sloti30t15-932691-1452542642-1-10809176855088304008>","program":"sloti30t15/imap","host":"imap30"}
-]
+{
+   "count" : 2,
+   "matches" : [
+      {
+         "timestamp" : "2016-01-11T15:03:59.020292-05:00",
+         "host" : "imap30",
+         "message" : " login: frontend2.nyi.internal [10.202.2.161] robntest plaintext User logged in SESSIONID=<sloti30t15-932691-1452542639-1-17409801321091060504>",
+         "pid" : "932691",
+         "program" : "sloti30t15/imap"
+      },
+      {
+         "program" : "sloti30t15/imap",
+         "host" : "imap30",
+         "message" : " login: frontend2.nyi.internal [10.202.2.161] robntest plaintext User logged in SESSIONID=<sloti30t15-932691-1452542642-1-10809176855088304008>",
+         "pid" : "932691",
+         "timestamp" : "2016-01-11T15:04:02.062097-05:00"
+      }
+   ]
+}
 ```
 
 Run `greengrocer` without options to find out about other knobs you can twiddle.

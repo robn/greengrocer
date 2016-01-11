@@ -501,16 +501,16 @@ sub new {
     $self{$ref} = {
         searcher => $args{searcher},
         base     => 0,
-        results  => [],
+        matches  => [],
     };
 
     return $ref;
 }
 
-sub results {
+sub matches {
     my ($ref) = @_;
     my $self = $self{$ref};
-    $self->{results};
+    $self->{matches};
 }
 
 sub DESTROY {
@@ -522,7 +522,7 @@ sub collect {
     my ($ref, $doc_id) = @_;
     my $self = $self{$ref};
     my $doc = $self->{searcher}->fetch_doc($self->{base} + $doc_id);
-    push @{$self->{results}}, { map { $_ => $doc->{$_} } qw(timestamp host program pid message) };
+    push @{$self->{matches}}, { map { $_ => $doc->{$_} } qw(timestamp host program pid message) };
 }
 
 sub set_base {
@@ -569,9 +569,13 @@ sub search {
         },
     );
 
-    my $results = $collector->results;
+    my $matches = $collector->matches;
+    my $count = @$matches;
 
-    $log->(sprintf "search: %s [results: %d]", join(' ', map { "$_=$args{$_}" } sort keys %args), scalar @$results);
+    $log->(sprintf "search: %s [matches %d]", join(' ', map { "$_=$args{$_}" } sort keys %args), scalar @$matches);
 
-    return $results
+    return {
+        matches => $matches,
+        count   => $count,
+    };
 }
