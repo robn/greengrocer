@@ -6,7 +6,8 @@ A log collector and search engine
 
 - accepts messages from the network in a trivial JSON format (that rsyslog can produce)
 - simple command-line search
-- standalone - just Perl and some modules, no web server or database required
+- in-built web server for HTTP+JSON searches
+- standalone - just Perl and some modules, no separate web server or database required
 
 ## quick start
 
@@ -26,7 +27,7 @@ Back where you ran the agent, you should start to see it receiving log lines:
 
 ```
 $ ./greengrocer -d /tmp/greengrocer agent
-[greengrocer] 2016-01-11T16:33:20 commit interval is 10
+[greengrocer] 2016-01-11T16:33:20 commit interval is 10, rolling every 24 hours
 [greengrocer] 2016-01-11T16:33:20 listening on 0.0.0.0:5514, receive buffer is 425984 bytes
 [greengrocer] 2016-01-11T16:33:50 indexed 8 lines [add 0.004 (0.000543) commit 0.002 (0.000242)]
 [greengrocer] 2016-01-11T16:35:10 indexed 3 lines [add 0.006 (0.001923) commit 0.008 (0.002777)]
@@ -42,20 +43,35 @@ $ ./greengrocer -d /tmp/greengrocer search robntest
 2015-12-22T00:05:43.153712-05:00 imap30 sloti30t15/imap[4101108]: login: frontend1.nyi.internal [10.202.2.160] robntest plaintext User logged in SESSIONID=<sloti30t15-4101108-1450760743-1-8621255614016944209>
 ```
 
+Or using the search server:
+
+```
+$ cpanm Twiggy Atto
+$ ./greengrocer -d /tmp/greengrocer web
+[greengrocer] 2016-01-12T07:30:48 0.0.0.0:5515 listening
+```
+
+```
+$ curl -s http://127.0.0.1:5515/search?query=robntest
+[
+  {"pid":"932691","timestamp":"2016-01-11T15:03:59.020292-05:00","message":" login: frontend2.nyi.internal [10.202.2.161] robntest plaintext User logged in SESSIONID=<sloti30t15-932691-1452542639-1-17409801321091060504>","program":"sloti30t15/imap","host":"imap30"},
+  {"pid":"932691","timestamp":"2016-01-11T15:04:02.062097-05:00","message":" login: frontend2.nyi.internal [10.202.2.161] robntest plaintext User logged in SESSIONID=<sloti30t15-932691-1452542642-1-10809176855088304008>","program":"sloti30t15/imap","host":"imap30"}
+]
+```
+
 Run `greengrocer` without options to find out about other knobs you can twiddle.
 
 ## plans
 
-This is a super-early work-in-progress (as I write this, it's existed less than a day). Current plans are:
+This is still under development. Current plans include:
 
 - optimise indexes at end-of-day
 - allow indexes in multiple locations
 - move old indexes to different locations (eg slow storage)
-- simple HTTP+JSON search interface
 
 ## credits and license
 
-Copyright (c) 2015 Robert Norris. MIT license. See LICENSE.
+Copyright (c) 2015-2016 Robert Norris. MIT license. See LICENSE.
 
 Shout out to Philip O'Toole for [ekanite](https://github.com/ekanite/ekanite), which I would have used had it been ever so slightly further along in its development.
 
