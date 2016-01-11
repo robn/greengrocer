@@ -11,7 +11,7 @@ A log collector and search engine
 ## quick start
 
 ```
-$ cpanm Lucy Path::Tiny AnyEvent Date::Format Date::Parse JSON::XS
+$ cpanm Lucy Path::Tiny AnyEvent AnyEvent::Handle::UDP Date::Format Date::Parse JSON::XS
 $ ./greengrocer -d /tmp/greengrocer agent
 ```
 
