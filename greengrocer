@@ -305,7 +305,6 @@ sub run_search {
 
     my $top_dir = path($INDEX_DIR);
     my @indexes = grep { my ($basename) = $_->basename =~ m/^(\d+)/; $basename >= $start_date && $basename < $end_date } $top_dir->children;
-    say for @indexes;
     my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
     my $searcher = Lucy::Search::PolySearcher->new(
         schema => schema(),
