@@ -18,6 +18,7 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use JSON::XS qw(decode_json);
 use IO::Socket::INET;
 use Socket qw(SOL_SOCKET SO_RCVBUF);
+use POSIX qw(_exit);
 
 getopts('d:h', \my %OPTS);
 
@@ -57,11 +58,39 @@ sub agent {
     $log->("commit interval is $interval");
 
     my @queue;
+
+    my $child_guard;
     my $queue_guard; $queue_guard = AnyEvent->timer(
         after    => $interval,
         interval => $interval,
         cb => sub {
             return unless @queue;
+
+            if ($child_guard) {
+                $log->("commit in progress, deferring");
+                return;
+            }
+
+            my @commit_queue = @queue;
+            undef @queue;
+
+            my $pid = fork;
+            if ($pid < 0) {
+                $log->("fork failed: $!");
+                $log->("returning ", scalar(@commit_queue), " lines to the queue");
+                push @queue, @commit_queue;
+                return;
+            }
+
+            if ($pid) {
+                $child_guard = AnyEvent->child(
+                    pid => $pid,
+                    cb => sub {
+                        undef $child_guard;
+                    },
+                );
+                return;
+            }
 
             my %indexers;
 
@@ -69,7 +98,7 @@ sub agent {
 
             $t_start = [gettimeofday];
 
-            for my $data (@queue) {
+            for my $data (@commit_queue) {
                 @$data{qw(program pid)} = delete($data->{syslogtag}) =~ m/^([^\[]+)(?:\[(\d+)\])?:$/;
                 $data->{pid} //= '';
 
@@ -97,14 +126,14 @@ sub agent {
             my $e_add     = tv_interval($t_start, $t_add);
             my $e_commit  = tv_interval($t_add, $t_commit);
 
-            my $n_items = scalar @queue;
+            my $n_items = scalar @commit_queue;
 
             my $r_add    = $e_add / $n_items;
             my $r_commit = $e_commit / $n_items;
 
             $log->("indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
 
-            undef @queue;
+            POSIX::_exit(0);
         },
     );
 
