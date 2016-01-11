@@ -26,10 +26,11 @@ Back where you ran the agent, you should start to see it receiving log lines:
 
 ```
 $ ./greengrocer -d /tmp/greengrocer agent
-[greengrocer] 2015-12-22T00:03:34 0.0.0.0:5514 listening
-[greengrocer] 2015-12-22T00:03:43 127.0.0.1:43195 connect
-[greengrocer] 2015-12-22T00:03:44 indexed 51 lines
-[greengrocer] 2015-12-22T00:03:45 indexed 130 lines
+[greengrocer] 2016-01-11T16:33:20 commit interval is 10
+[greengrocer] 2016-01-11T16:33:20 listening on 0.0.0.0:5514, receive buffer is 425984 bytes
+[greengrocer] 2016-01-11T16:33:50 indexed 8 lines [add 0.004 (0.000543) commit 0.002 (0.000242)]
+[greengrocer] 2016-01-11T16:35:10 indexed 3 lines [add 0.006 (0.001923) commit 0.008 (0.002777)]
+[greengrocer] 2016-01-11T16:36:50 indexed 8 lines [add 0.002 (0.000228) commit 0.001 (0.000181)]
 ...
 ```
 
