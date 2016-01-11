@@ -16,6 +16,8 @@ use Date::Parse qw(str2time);
 use Getopt::Std qw(getopts);
 use Time::HiRes qw(gettimeofday tv_interval);
 use JSON::XS qw(decode_json);
+use IO::Socket::INET;
+use Socket qw(SOL_SOCKET SO_RCVBUF);
 
 getopts('d:h', \my %OPTS);
 
@@ -106,7 +108,7 @@ sub agent {
         },
     );
 
-    my $server_guard; $server_guard = AnyEvent::Handle::UDP->new(
+    my $server; $server = AnyEvent::Handle::UDP->new(
         bind => [$ip, $port],
         on_recv => sub {
             my ($data, $handle, $client_addr) = @_;
@@ -122,6 +124,12 @@ sub agent {
             $handle->destroy;
         },
     );
+
+    $server->fh->setsockopt(SOL_SOCKET, SO_RCVBUF, 64*1024*1024) or
+      $log->("setsockopt: $!");
+
+    my $rcvbuf = $server->fh->getsockopt(SOL_SOCKET, SO_RCVBUF);
+    $log->("listening on $ip:$port, receive buffer is $rcvbuf bytes");
 
     $cv->recv;
 }
