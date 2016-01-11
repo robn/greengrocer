@@ -41,7 +41,7 @@ $handler->(@ARGV);
 
 sub agent {
     local @ARGV = @_;
-    getopts('l:p:i:', \my %opts);
+    getopts('l:p:i:h:', \my %opts);
 
     my $ip = $opts{l} // '0.0.0.0';
     my $port = $opts{p} // 5514;
@@ -52,7 +52,11 @@ sub agent {
 
     my $interval = (0+($opts{i} // 0)) || 10;
 
-    $log->("commit interval is $interval");
+    my $roll_hours = $opts{h} // 24;
+
+    $log->("commit interval is $interval, rolling every $roll_hours hours");
+
+    $roll_hours %= 24;
 
     my @queue;
 
@@ -99,11 +103,16 @@ sub agent {
                 @$data{qw(program pid)} = delete($data->{syslogtag}) =~ m/^([^\[]+)(?:\[(\d+)\])?:$/;
                 $data->{pid} //= '';
 
-                my ($y, $m, $d) = split '-', substr($data->{timestamp}, 0, 10);
-                unless ($y && $m && $d) {
+                my ($y, $m, $d, $h) = $data->{timestamp} =~ m/^(\d+)-(\d+)-(\d+)T(\d+)/;
+                unless (defined $y && defined $m && defined $d && defined $h) {
                     $log->("E: malformed timestamp: $data->{timestamp}");
                 }
+
                 my $key = "$y$m$d";
+                if ($roll_hours) {
+                    my $roll = int($h / $roll_hours);
+                    $key .= $roll >= 10 ? "_$roll" : "_0$roll";
+                }
 
                 ($indexers{$key} ||= Lucy::Index::Indexer->new(
                     index    => path($INDEX_DIR, $key),
@@ -295,7 +304,8 @@ sub run_search {
     my $query = $query_parser->parse($args{query} // '');
 
     my $top_dir = path($INDEX_DIR);
-    my @indexes = grep { my $basename = $_->basename; $basename >= $start_date && $basename < $end_date } $top_dir->children;
+    my @indexes = grep { my ($basename) = $_->basename =~ m/^(\d+)/; $basename >= $start_date && $basename < $end_date } $top_dir->children;
+    say for @indexes;
     my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
     my $searcher = Lucy::Search::PolySearcher->new(
         schema => schema(),
@@ -327,6 +337,7 @@ Options:
     -l <ip>       - IP address to listen on [default: all]
     -p <port>     - port to listen on [default: 5514]
     -i <interval> - commit logs to index every N seconds [default: 10]
+    -h <hours>    - create new index within each day every N hours [default: 24]
 USAGE
     }
     elsif ($action eq 'search') {
