@@ -9,11 +9,9 @@ var view = new O.View({
     query: '',
 
     submitQuery: function ( event ) {
-        var key = O.DOMEvent.lookupKey( event );
-        if ( key === 'enter' ) {
+        if ( O.DOMEvent.lookupKey( event ) === 'enter' ) {
             var query = this.get( 'query' );
-            var currentQuery = this.get( 'currentQuery' );
-            if (query !== currentQuery && query !== '') {
+            if ( query !== '' ) {
                 this.set( 'currentQuery', query );
             }
             event.stopPropagation();
@@ -50,8 +48,8 @@ var view = new O.View({
         var output = '';
         var matches = this.get( 'results' ).matches || [];
         matches.map( function ( match ) {
-            var pid = match.pid ? '['+match.pid+']' : ''
-            output = output + O.loc( '[_1] [_2] [_3][_4]:[_5]', match.timestamp, match.host, match.program, pid, match.message ) + "\n";
+            var pid = match.pid ? '[' + match.pid + ']' : ''
+            output = output + '%s %s %s%s:%s'.format(match.timestamp, match.host, match.program, pid, match.message) + "\n";
         });
         return output;
     }.property( 'results' ),
