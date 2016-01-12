@@ -12,10 +12,7 @@ var view = new O.View({
 
     submitQuery: function ( event ) {
         if ( O.DOMEvent.lookupKey( event ) === 'enter' ) {
-            var query = this.get( 'query' );
-            if ( query !== '' ) {
-                this.set( 'currentQuery', query );
-            }
+            this.set( 'currentQuery', this.get( 'query' ));
             event.stopPropagation();
         }
     }.on( 'keydown' ),
@@ -27,6 +24,12 @@ var view = new O.View({
         var request = this.get( 'currentRequest' );
         if ( request !== null ) {
             request.abort();
+        }
+
+        var query = this.get( 'currentQuery' );
+        if ( query === '' ) {
+            this.set( 'results', {} );
+            return;
         }
 
         var app = this;
