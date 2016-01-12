@@ -47,7 +47,11 @@ var view = new O.View({
     formattedResults: function () {
         var output = '';
         var matches = this.get( 'results' ).matches || [];
-        matches.map( function ( match ) {
+        matches.sort( function (a, b) {
+            var ta = a.timestamp;
+            var tb = b.timestamp;
+            return ( ( ta == tb ) ? 0 : ( ( ta > tb ) ? 1 : -1 ) );
+        }).map( function ( match ) {
             var pid = match.pid ? '[' + match.pid + ']' : ''
             output = output + '%s %s %s%s:%s'.format(match.timestamp, match.host, match.program, pid, match.message) + "\n";
         });
