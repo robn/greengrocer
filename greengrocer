@@ -28,6 +28,7 @@ my $ACTION = shift @ARGV;
 my $handler = {
     agent    => \&agent,
     search   => \&search,
+    rollup   => \&rollup,
     optimize => \&optimize,
     web      => \&web,
 }->{$ACTION // ''};
@@ -189,6 +190,78 @@ sub search {
             usage();
         },
     );
+}
+
+sub rollup {
+    local @ARGV = @_;
+    getopts('fmk', \my %opts);
+
+    my ($index, $target_dir) = @ARGV;
+    unless ($index && $target_dir) {
+        usage();
+    }
+
+    my $today = time2str("%Y%m%d", time);
+    if (!$opts{f} && $index =~ m/^$today/) {
+        warn <<EOF;
+E: This is today's index. Rolling up today's index could cause confusion later
+because if new logs arrive you'll end up with multiple indexes with the same
+name, which isn't recommended. If you really want to do this, rerun rollup with
+the -f switch.
+EOF
+        exit 1;
+    }
+
+    my $target_index_dir = path($target_dir, $index);
+    if (!$opts{m} && $target_index_dir->is_dir) {
+        warn <<EOF;
+E: Target index already exists, and I won't overwrite it. Maybe you wanted to
+merge this index instead? Use the -m switch for that.
+EOF
+        exit 1;
+    }
+
+    my $temp_index_dir;
+    unless ($opts{m}) {
+        my $temp_dir = path($target_dir, "tmp");
+        $temp_dir->mkpath;
+
+        $temp_index_dir = path($temp_dir, $index);
+        $temp_index_dir->remove_tree;
+    }
+
+    my $indexer = eval {
+        Lucy::Index::Indexer->new(
+            index  => $temp_index_dir // $target_index_dir,
+            schema => schema(),
+            create => 1,
+        );
+    };
+    if ($@) {
+        my $dir = $temp_index_dir // $target_index_dir;
+        warn "E: couldn't open index $dir: $@\n";
+        exit 1;
+    }
+
+    warn "rolling up $index into $target_index_dir...\n";
+
+    my $source_index_dir = path($INDEX_DIR, $index);
+
+    $indexer->add_index($source_index_dir);
+    $indexer->optimize;
+    $indexer->commit;
+
+    if ($temp_index_dir) {
+        warn "moving into place...\n";
+        $temp_index_dir->move($target_index_dir);
+    }
+
+    unless ($opts{k}) {
+        warn "deleting original index...\n";
+        $source_index_dir->remove_tree;
+    }
+
+    warn "done\n";
 }
 
 sub optimize {
@@ -373,6 +446,20 @@ Example:
 
 USAGE
     }
+    elsif ($action eq 'rollup') {
+        print STDERR <<USAGE;
+Usage: greengrocer -d <index-dir> rollup [opts...] <index> <target-index-dir>
+
+Move/merge indexes. Copies the given index to the target dir and removes the
+original.
+
+Options:
+    -f - force move of an active index (ie today's)
+    -m - merge mode. If the target index already exist, the source will be
+         copied into it
+    -k - keep; don't remove the original. Useful for testing
+USAGE
+    }
     elsif ($action eq 'optimize') {
         print STDERR <<USAGE;
 Usage: greengrocer -d <index-dir> optimize <indexes...>
@@ -399,6 +486,7 @@ Actions:
     agent    - run the log collection agent
     search   - show log lines matching a query
     web      - run the web search API server
+    rollup   - move/merge indexes
     optimize - optimize indexes for searching
 
 For more help on action: greengrocer <action> -h
