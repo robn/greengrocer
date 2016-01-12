@@ -46,7 +46,7 @@ $ ./greengrocer -d /tmp/greengrocer search robntest
 Or using the search server:
 
 ```
-$ cpanm Twiggy Atto
+$ cpanm Twiggy Plack Atto
 $ ./greengrocer -d /tmp/greengrocer web
 [greengrocer] 2016-01-12T07:30:48 0.0.0.0:5515 listening
 ```
