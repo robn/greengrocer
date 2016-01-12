@@ -4,6 +4,8 @@
 
 var view = new O.View({
 
+    allowTextSelection: true,
+
     id: 'search',
 
     query: '',
