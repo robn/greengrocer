@@ -46,7 +46,7 @@ $ ./greengrocer -d /tmp/greengrocer search robntest
 Or using the search server:
 
 ```
-$ cpanm Twiggy Plack Atto
+$ cpanm Twiggy Plack Plack::Middleware::Redirect Atto
 $ ./greengrocer -d /tmp/greengrocer web
 [greengrocer] 2016-01-12T07:30:48 0.0.0.0:5515 listening
 ```
@@ -73,6 +73,8 @@ $ curl -s http://127.0.0.1:5515/search?query=robntest
    ]
 }
 ```
+
+The search server also presents a nice little UI; point your browser to `/ui/`.
 
 Run `greengrocer` without options to find out about other knobs you can twiddle.
 
