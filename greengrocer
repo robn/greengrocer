@@ -46,7 +46,9 @@ sub agent {
     my $ip = $opts{l} // '0.0.0.0';
     my $port = $opts{p} // 5514;
 
-    my $log = logger();
+    AnyEvent::Log::ctx->log_to_warn;
+    AnyEvent::Log::ctx->fmt_cb(sub { format_log($_[3]) });
+    my $log = AnyEvent::Log::logger("notice");
 
     my $cv = AnyEvent::condvar;
 
@@ -215,8 +217,8 @@ sub optimize {
 }
 
 sub web {
-    my @modules = qw(Twiggy Plack Plack::Middleware::Redirect Atto);
-    my @missing = grep { ! eval "require $_" } (@modules, 'Twiggy::Server', 'Plack::Builder');
+    my @modules = qw(Starman Plack Plack::Middleware::Redirect Atto);
+    my @missing = grep { ! eval "require $_" } (@modules, 'Starman::Server', 'Plack::Builder');
     if (@missing) {
         say STDERR "E: the web server requires these additional modules: @modules";
         say STDERR "E: try running: cpanm @modules";
@@ -229,29 +231,20 @@ sub web {
     my $ip = $opts{l} // '0.0.0.0';
     my $port = $opts{p} // 5515;
 
-    my $log = logger();
+    my $server = Starman::Server->new;
 
-    my $cv = AnyEvent::condvar;
-
-    my $server = Twiggy::Server->new(host => $ip, port => $port);
+    my $log = sub { $server->log(2, format_log(shift)) };
 
     my $builder = Plack::Builder->new;
     $builder->add_middleware('Redirect', url_patterns => [ '^/$' => ['/ui/', 302] ]);
     $builder->add_middleware('Static', path => sub { s{^/ui/$}{/ui/index.html}; m{^/ui/} }, root => './');
     $builder->mount('/', greengrocer::SearchServer->psgi(logger => $log));
-    $server->register_service($builder->to_app);
 
-    $log->("$ip:$port listening");
-
-    $cv->recv;
+    $server->run($builder->to_app, { host => $ip, port => $port });
 }
 
-sub logger {
-    AnyEvent::Log::ctx->log_to_warn;
-    AnyEvent::Log::ctx->fmt_cb(sub {
-            sprintf "[greengrocer] %s %s\n", time2str("%Y-%m-%dT%H:%M:%S", time), $_[3];
-    });
-    AnyEvent::Log::logger("notice");
+sub format_log {
+    sprintf "[greengrocer] %s %s\n", time2str("%Y-%m-%dT%H:%M:%S", time), shift;
 }
 
 sub schema {
