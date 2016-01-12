@@ -69,7 +69,6 @@ var view = new O.View({
             new O.TextView({
                 multiline: false,
                 expanding: true,
-                focussed: true,
                 value: new O.Binding({
                     isTwoWay: true
                 }).from( 'query', this )
