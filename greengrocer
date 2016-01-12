@@ -215,8 +215,8 @@ sub optimize {
 }
 
 sub web {
-    my @modules = qw(Twiggy Plack::Builder Atto);
-    my @missing = grep { ! eval "require $_" } qw(Twiggy::Server Plack::Builder Atto);
+    my @modules = qw(Twiggy Plack Plack::Middleware::Redirect Atto);
+    my @missing = grep { ! eval "require $_" } (@modules, 'Twiggy::Server', 'Plack::Builder');
     if (@missing) {
         say STDERR "E: the web server requires these additional modules: @modules";
         say STDERR "E: try running: cpanm @modules";
@@ -236,6 +236,7 @@ sub web {
     my $server = Twiggy::Server->new(host => $ip, port => $port);
 
     my $builder = Plack::Builder->new;
+    $builder->add_middleware('Redirect', url_patterns => [ '^/$' => ['/ui/', 302] ]);
     $builder->add_middleware('Static', path => sub { s{^/ui/$}{/ui/index.html}; m{^/ui/} }, root => './');
     $builder->mount('/', greengrocer::SearchServer->psgi(logger => $log));
     $server->register_service($builder->to_app);
