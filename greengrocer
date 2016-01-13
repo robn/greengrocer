@@ -294,7 +294,7 @@ sub optimize {
 }
 
 sub web {
-    my @modules = qw(Starman Plack Plack::Middleware::Redirect Atto);
+    my @modules = qw(Starman Plack Plack::Middleware::Redirect Plack::Middleware::Deflater Atto);
     my @missing = grep { ! eval "require $_" } (@modules, 'Starman::Server', 'Plack::Builder');
     if (@missing) {
         say STDERR "E: the web server requires these additional modules: @modules";
@@ -314,6 +314,8 @@ sub web {
 
     my $builder = Plack::Builder->new;
     $builder->add_middleware('Redirect', url_patterns => [ '^/$' => ['/ui/', 302] ]);
+    $builder->add_middleware('Deflater');
+    $builder->add_middleware('ContentLength');
     $builder->add_middleware('Static', path => sub { s{^/ui/$}{/ui/index.html}; m{^/ui/} }, root => './');
     $builder->mount('/', greengrocer::SearchServer->psgi(logger => $log));
 
