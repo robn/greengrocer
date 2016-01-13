@@ -74,6 +74,7 @@ var view = new O.View({
             var pid = match.pid ? '[' + match.pid + ']' : ''
             return '%s %s %s%s:%s'
                 .format( match.timestamp, match.host, match.program, pid, match.message )
+                .escapeHTML()
                 .replace( termRegex, '<span>$1</span>' );
         }).join( "\n" );
         return output;
