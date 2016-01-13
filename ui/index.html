@@ -14,6 +14,9 @@
   body {
     background: #f6f6f6;
   }
+  body, html {
+      height: 100%;
+  }
   pre {
     margin-top: 5px;
     border: 1px solid #ccc;
@@ -28,8 +31,13 @@
   }
   #search {
     background: #fff;
-    border: 1px solid #ccc;
-    padding: 10px;
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+    padding: 0 10px;
+  }
+  #search > * {
+    flex: 0 1 auto;
   }
   h1 {
     font-size: 24px;
@@ -56,6 +64,9 @@
     -moz-transition: background-color 1s;
     -o-transition: background-color 1s;
     transition: background-color 1s;
+  }
+  #search > .v-Text {
+    flex-shrink: 0;
   }
   .v-Text.is-disabled {
     background-color: #f6f6f6;
