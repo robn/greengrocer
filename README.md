@@ -95,6 +95,8 @@ Copyright (c) 2015-2016 Robert Norris. MIT license. See LICENSE.
 
 This work was supported by [FastMail](https://www.fastmail.com/).
 
+Loading spinner taken from [SpinKit](http://tobiasahlin.com/spinkit/) by @tobiasahlin. Copyright (c) 2015 Tobias Ahlin (MIT license).
+
 Shout out to Philip O'Toole for [ekanite](https://github.com/ekanite/ekanite), which I would have used had it been ever so slightly further along in its development.
 
 ## contributing

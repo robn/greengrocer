@@ -38,11 +38,14 @@ var view = new O.View({
             data: "query=" + encodeURIComponent( this.get( 'currentQuery' )),
             success: function ( event ) {
                 // XXX error checks
+                app.get( 'spinner' ).set( 'hidden', true );
                 app.set( 'results', JSON.parse( event.data ) );
             }.on( 'io:success' )
         });
 
         this.set( 'currentRequest', request );
+
+        app.get( 'spinner' ).set( 'hidden', false );
 
         request.send();
     }.observes( 'currentQuery' ),
@@ -63,7 +66,15 @@ var view = new O.View({
         return output;
     }.property( 'results' ),
 
+    spinner: null,
+
     draw: function ( layer, Element, el ) {
+        let spinner = el( 'div', { class: 'spinner', hidden: true }, [
+            el( 'div', { class: 'bounce1' }),
+            el( 'div', { class: 'bounce2' }),
+            el( 'div', { class: 'bounce3' })
+        ]);
+        this.set( 'spinner', spinner );
         return [
             el( 'h1', [ 'Log search' ]),
             new O.TextView({
@@ -73,6 +84,7 @@ var view = new O.View({
                     isTwoWay: true
                 }).from( 'query', this )
             }),
+            spinner,
             el( 'pre', {
                 text: O.bind( 'formattedResults', this )
             })
