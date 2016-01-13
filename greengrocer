@@ -681,6 +681,9 @@ sub search {
     $log->(sprintf "search: %s [matches %d]", join(' ', map { "$_=$args{$_}" } sort keys %args), scalar @$matches);
 
     return {
+        start   => $args{start},
+        end     => $args{end},
+        query   => $args{query},
         matches => $matches,
         count   => $count,
     };
