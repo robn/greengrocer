@@ -22,7 +22,7 @@ use POSIX qw(_exit);
 
 getopts('d:h', \my %OPTS);
 
-my $INDEX_DIR = $OPTS{d};
+my ($INDEX_DIR, @EXTRA_INDEX_DIRS) = split ':', $OPTS{d};
 
 my $ACTION = shift @ARGV;
 my $handler = {
@@ -374,8 +374,15 @@ sub run_search {
     $query_parser->set_heed_colons(1);
     my $query = $query_parser->parse($args{query} // '');
 
-    my $top_dir = path($INDEX_DIR);
-    my @indexes = grep { my ($basename) = $_->basename =~ m/^(\d+)/; $basename >= $start_date && $basename < $end_date } $top_dir->children;
+    my @indexes =
+        grep {
+            my ($basename) = $_->basename =~ m/^(\d+)/;
+            $basename //= -1;
+            $basename >= $start_date && $basename < $end_date;
+        } map {
+            path($_)->absolute->children
+        } ($INDEX_DIR, @EXTRA_INDEX_DIRS);
+
     my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
     my $searcher = Lucy::Search::PolySearcher->new(
         schema => schema(),
@@ -416,6 +423,8 @@ Usage: greengrocer -d <index-dir> search [opts...] <query...>
 
 Searches for log lines matching the given query.
 
+You can specify multiple index dirs with -d /dir1:/dir2.
+
 Options:
     -s <date> - start date to search (inclusive) [default: today]
     -e <date> - end date to search (exclusive) [default: tomorrow]
@@ -428,6 +437,8 @@ Usage: greengrocer -d <index-dir> web [opts...]
 
 Starts the web search API server. The server will log requests to standard
 error.
+
+You can specify multiple index dirs with -d /dir1:/dir2.
 
 Options:
     -l <ip>       - IP address to listen on [default: all]
@@ -480,7 +491,11 @@ USAGE
 Usage: greengrocer -d <index-dir> <action> [opts...]
 
 Global options:
-    -d <index-dir> - location to store indexes
+
+    -d <index-dir> - location to store indexes. Multiple locations can be
+                     specified by separating them with a colon. Most actions
+                     will only use the first one; see help on specific actions
+                     for more details.
 
 Actions:
     agent    - run the log collection agent
