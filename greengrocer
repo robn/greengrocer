@@ -261,7 +261,7 @@ EOF
     unless ($opts{k}) {
         for my $index (@indexes) {
             warn "deleting original index $index...\n";
-            $index->remove_tree;
+            path($index)->remove_tree;
         }
     }
 
