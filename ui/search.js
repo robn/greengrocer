@@ -54,15 +54,28 @@ var view = new O.View({
     results: {},
 
     formattedResults: function () {
-        var matches = this.get( 'results' ).matches || [];
+        var results = this.get( 'results' );
+        var matches = results.matches || [];
+        var query = results.query || '';
+
+        // splitting out search terms
+        // XXX implement them all
+        // https://metacpan.org/pod/Lucy::Search::QueryParser#DESCRIPTION
+        var terms = query.split(/\s+(?:AND\s+NOT|OR|AND)?\s*/).filter( function (s) {
+            return s !== '';
+        });
+        var termRegex = new RegExp( '(' + terms.join('|') + ')', 'g' );
+
         var output = matches.sort( function (a, b) {
             var ta = a.timestamp;
             var tb = b.timestamp;
             return ( ( ta == tb ) ? 0 : ( ( ta > tb ) ? 1 : -1 ) );
         }).map( function ( match ) {
             var pid = match.pid ? '[' + match.pid + ']' : ''
-            return '%s %s %s%s:%s'.format(match.timestamp, match.host, match.program, pid, match.message);
-        }).join("\n");
+            return '%s %s %s%s:%s'
+                .format( match.timestamp, match.host, match.program, pid, match.message )
+                .replace( termRegex, '<span>$1</span>' );
+        }).join( "\n" );
         return output;
     }.property( 'results' ),
 
@@ -86,7 +99,7 @@ var view = new O.View({
             }),
             spinner,
             el( 'pre', {
-                text: O.bind( 'formattedResults', this )
+                html: O.bind( 'formattedResults', this )
             })
         ];
     }
