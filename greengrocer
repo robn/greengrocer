@@ -376,7 +376,10 @@ sub run_search {
         return;
     }
 
-    my $query_parser = Lucy::Search::QueryParser->new(schema => schema());
+    my $query_parser = Lucy::Search::QueryParser->new(
+        schema         => schema(),
+        default_boolop => 'AND',
+    );
     $query_parser->set_heed_colons(1);
     my $query = $query_parser->parse($args{query} // '');
 
