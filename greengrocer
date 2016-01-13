@@ -194,17 +194,17 @@ sub search {
 
 sub rollup {
     local @ARGV = @_;
-    getopts('fmk', \my %opts);
+    getopts('fk', \my %opts);
 
-    my ($index, $target_dir) = @ARGV;
-    unless ($index && $target_dir) {
+    my ($date, $target_dir) = @ARGV;
+    unless ($date && $target_dir) {
         usage();
     }
 
     my $today = time2str("%Y%m%d", time);
-    if (!$opts{f} && $index =~ m/^$today/) {
+    if (!$opts{f} && substr($date, 0, 8) == $today) {
         warn <<EOF;
-E: This is today's index. Rolling up today's index could cause confusion later
+E: This is today's date. Rolling up today's indexes could cause confusion later
 because if new logs arrive you'll end up with multiple indexes with the same
 name, which isn't recommended. If you really want to do this, rerun rollup with
 the -f switch.
@@ -212,53 +212,57 @@ EOF
         exit 1;
     }
 
-    my $target_index_dir = path($target_dir, $index);
-    if (!$opts{m} && $target_index_dir->is_dir) {
-        warn <<EOF;
-E: Target index already exists, and I won't overwrite it. Maybe you wanted to
-merge this index instead? Use the -m switch for that.
-EOF
+    my $target_index_dir = path($target_dir, $date);
+    if ($target_index_dir->is_dir) {
+        warn "E: Target index already exists, and I won't overwrite it. Move it out of the way first.\n";
         exit 1;
     }
 
-    my $temp_index_dir;
-    unless ($opts{m}) {
-        my $temp_dir = path($target_dir, "tmp");
-        $temp_dir->mkpath;
+    my @indexes =
+        grep {
+            my $basename = $_->basename;
+            substr($basename, 0, 8) eq $date || $basename eq $date;
+        } map {
+            path($_)->absolute->children
+        } ($INDEX_DIR, @EXTRA_INDEX_DIRS);
 
-        $temp_index_dir = path($temp_dir, $index);
-        $temp_index_dir->remove_tree;
-    }
+    my $temp_dir = path($target_dir, "tmp");
+    $temp_dir->mkpath;
+
+    my $temp_index_dir = path($temp_dir, $date);
+    $temp_index_dir->remove_tree;
 
     my $indexer = eval {
         Lucy::Index::Indexer->new(
-            index  => $temp_index_dir // $target_index_dir,
+            index  => $temp_index_dir,
             schema => schema(),
             create => 1,
         );
     };
     if ($@) {
-        my $dir = $temp_index_dir // $target_index_dir;
-        warn "E: couldn't open index $dir: $@\n";
+        warn "E: couldn't open new index in $temp_index_dir: $@\n";
         exit 1;
     }
 
-    warn "rolling up $index into $target_index_dir...\n";
-
-    my $source_index_dir = path($INDEX_DIR, $index);
-
-    $indexer->add_index($source_index_dir);
-    $indexer->optimize;
-    $indexer->commit;
-
-    if ($temp_index_dir) {
-        warn "moving into place...\n";
-        $temp_index_dir->move($target_index_dir);
+    for my $index (@indexes) {
+        warn "rolling up $index into $temp_index_dir...\n";
+        $indexer->add_index($index);
     }
 
+    warn "optimizing new index...\n";
+    $indexer->optimize;
+
+    warn "committing new index...\n";
+    $indexer->commit;
+
+    warn "moving new index into $target_index_dir...\n";
+    $temp_index_dir->move($target_index_dir);
+
     unless ($opts{k}) {
-        warn "deleting original index...\n";
-        $source_index_dir->remove_tree;
+        for my $index (@indexes) {
+            warn "deleting original index $index...\n";
+            $index->remove_tree;
+        }
     }
 
     warn "done\n";
@@ -462,13 +466,12 @@ USAGE
 Usage: greengrocer -d <index-dir> rollup [opts...] <index> <target-index-dir>
 
 Move/merge indexes. Copies the given index to the target dir and removes the
-original.
+original. If there are multiple indexes matching the named index (ie when using
+hourly rolls), they will all be moved into a single index.
 
 Options:
     -f - force move of an active index (ie today's)
-    -m - merge mode. If the target index already exist, the source will be
-         copied into it
-    -k - keep; don't remove the original. Useful for testing
+    -k - keep; don't remove the original indexes. Useful for testing
 USAGE
     }
     elsif ($action eq 'optimize') {
