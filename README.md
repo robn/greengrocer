@@ -80,15 +80,20 @@ Run `greengrocer` without options to find out about other knobs you can twiddle.
 
 ## plans
 
-This is still under development. Current plans include:
+While greengrocer is still very new, it's fairly close to feature-complete.
+Future changes will likely include:
 
-- optimise indexes at end-of-day
-- allow indexes in multiple locations
-- move old indexes to different locations (eg slow storage)
+- UI improvements (date ranges, query building, highlighting)
+- Performance improvements
+- Higher-level tooling (eg auto-rollup at end of day)
+- Error recovery
+- Documentation
 
 ## credits and license
 
 Copyright (c) 2015-2016 Robert Norris. MIT license. See LICENSE.
+
+This work was supported by [FastMail](https://www.fastmail.com/).
 
 Shout out to Philip O'Toole for [ekanite](https://github.com/ekanite/ekanite), which I would have used had it been ever so slightly further along in its development.
 
