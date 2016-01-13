@@ -38,6 +38,7 @@ var view = new O.View({
             data: "query=" + encodeURIComponent( this.get( 'currentQuery' )),
             success: function ( event ) {
                 // XXX error checks
+                app.set( 'currentRequest', null );
                 app.get( 'spinner' ).set( 'hidden', true );
                 app.set( 'results', JSON.parse( event.data ) );
             }.on( 'io:success' )
