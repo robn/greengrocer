@@ -207,7 +207,7 @@ sub move {
         unless ($opts{f}) {
             my @today_indexes = grep { substr($_, 0, 8) == $today } @source_indexes;
             if (@today_indexes) {
-                warn <<EOF;
+                print STDERR <<EOF;
 E: One or more indexes are for today's logs. Moving today's indexes could cause
 confusion later because if new logs arrive you'll end up with multiple indexes
 with the same name, which isn't recommended. If you really want to do this,
@@ -221,7 +221,7 @@ EOF
 
         my @missing_indexes = grep { ! path($INDEX_DIR, $_)->is_dir } @source_indexes;
         if (@missing_indexes) {
-            warn <<EOF;
+            print STDERR <<EOF;
 E: One or more indexes don't exist: @missing_indexes
 EOF
             exit 1;
@@ -246,7 +246,7 @@ EOF
     else {
         my @existing_target_indexes = grep { path($target_dir, $_)->is_dir } @source_indexes;
         if (@existing_target_indexes) {
-            warn <<EOF;
+            print STDERR <<EOF;
 E: Target indexes already exist. Move them out of the way, or use -t to merge
 indexes into an existing target.
 
@@ -278,29 +278,29 @@ EOF
             exit 1;
         }
 
-        warn "reindexing $source_index_path into $target_index_path...\n";
+        print STDERR format_log("reindexing $source_index_path into $target_index_path...");
         $indexer->add_index($source_index_path);
 
-        warn "optimizing $target_index_path...\n";
+        print STDERR format_log("optimizing $target_index_path...");
         $indexer->optimize;
 
-        warn "committing $target_index_path...\n";
+        print STDERR format_log("committing $target_index_path...");
         $indexer->commit;
 
         unless ($target_index) {
-            warn "moving $target_index_path to $target_dir\n";
+            print STDERR format_log("moving $target_index_path to $target_dir");
             path($target_index_path)->move(path($target_dir, $target_index_path->basename));
         }
 
         unless ($opts{k}) {
-            warn "deleting original index $source_index_path...\n";
+            print STDERR format_log("deleting original index $source_index_path...");
             path($source_index_path)->remove_tree;
         }
     }
 
     path($target_dir, "tmp")->remove_tree;
 
-    warn "done\n";
+    print STDERR format_log("done");
 }
 
 sub optimize {
@@ -318,13 +318,11 @@ sub optimize {
             next;
         }
 
-        print STDERR "indexing $index... ";
+        print STDERR format_log("indexing $index...");
         STDERR->flush;
 
         $indexer->optimize;
         $indexer->commit;
-
-        say STDERR "done";
     }
 }
 
@@ -358,7 +356,7 @@ sub web {
 }
 
 sub format_log {
-    sprintf "[greengrocer] %s %s\n", time2str("%Y-%m-%dT%H:%M:%S", time), shift;
+    sprintf "[greengrocer:%s] %s %s\n", $ACTION, time2str("%Y-%m-%dT%H:%M:%S", time), shift;
 }
 
 sub schema {
