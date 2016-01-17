@@ -79,7 +79,7 @@ sub agent {
             undef @queue;
 
             my $pid = fork;
-            if ($pid < 0) {
+            if (!defined $pid) {
                 $log->("fork failed: $!");
                 $log->("returning ", scalar(@commit_queue), " lines to the queue");
                 push @queue, @commit_queue;
