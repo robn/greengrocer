@@ -692,12 +692,33 @@ sub psgi {
     Atto->psgi;
 }
 
+sub collect_terms {
+    my ($q) = @_;
+    if ($q->isa("Lucy::Search::NoMatchQuery") || $q->isa("Lucy::Search::NOTQuery")) {
+        return ();
+    }
+    elsif ($q->isa("Lucy::Search::PolyQuery")) {
+        return keys %{ +{ map { $_ => 1 } map { collect_terms($_) } @{$q->get_children} } };
+    }
+    elsif ($q->isa("Lucy::Search::TermQuery")) {
+        return ($q->get_term)
+    }
+    elsif ($q->isa("Lucy::Search::PhraseQuery")) {
+        return @{$q->get_terms};
+    }
+    else {
+        warn "collect_terms: don't know how to dump ".ref $q."\n";
+        return ();
+    }
+}
+
 sub search {
     my (%args) = @_;
 
     my $info = join(' ', map { "$_=$args{$_}" } sort keys %args);
 
     my $collector;
+    my @terms;
 
     greengrocer::run_search(
         start     => $args{start},
@@ -705,6 +726,7 @@ sub search {
         query     => $args{query},
         collector => sub {
             my ($searcher, $query) = @_;
+            @terms = collect_terms($query);
             $collector = greengrocer::ServerCollector->new(searcher => $searcher);
             return $collector;
         },
@@ -724,6 +746,7 @@ sub search {
         start   => $args{start},
         end     => $args{end},
         query   => $args{query},
+        terms   => \@terms,
         matches => $matches,
         count   => $count,
     };
