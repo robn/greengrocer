@@ -58,12 +58,7 @@ var view = new O.View({
         var matches = results.matches || [];
         var query = results.query || '';
 
-        // splitting out search terms
-        // XXX implement them all
-        // https://metacpan.org/pod/Lucy::Search::QueryParser#DESCRIPTION
-        var terms = query.split(/\s+(?:AND\s+NOT|OR|AND)?\s*/).filter( function (s) {
-            return s !== '';
-        });
+        var terms = results.terms || [];
         var termRegex = new RegExp( '(' + terms.join('|') + ')', 'g' );
 
         var output = matches.sort( function (a, b) {
