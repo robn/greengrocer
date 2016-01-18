@@ -109,6 +109,7 @@ sub agent {
                 my ($y, $m, $d, $h) = $data->{timestamp} =~ m/^(\d+)-(\d+)-(\d+)T(\d+)/;
                 unless (defined $y && defined $m && defined $d && defined $h) {
                     $log->("E: malformed timestamp: $data->{timestamp}");
+                    next;
                 }
 
                 my $key = "$y$m$d";
