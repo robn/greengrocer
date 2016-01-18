@@ -96,6 +96,8 @@ sub agent {
                 return;
             }
 
+            $log = sub { print STDERR format_log(shift) };
+
             my %indexers;
 
             my ($t_start, $t_add, $t_commit);
@@ -108,7 +110,7 @@ sub agent {
 
                 my ($y, $m, $d, $h) = $data->{timestamp} =~ m/^(\d+)-(\d+)-(\d+)T(\d+)/;
                 unless (defined $y && defined $m && defined $d && defined $h) {
-                    $log->("E: malformed timestamp: $data->{timestamp}");
+                    $log->("E: malformed timestamp in document: ".encode_json($data));
                     next;
                 }
 
@@ -141,7 +143,7 @@ sub agent {
             my $r_add    = $e_add / $n_items;
             my $r_commit = $e_commit / $n_items;
 
-            $log->("indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
+            $log->(sprintf("indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit));
 
             POSIX::_exit(0);
         },
