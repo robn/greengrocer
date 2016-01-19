@@ -64,9 +64,12 @@ var view = new O.View({
     }.observes( 'currentQuery' ),
 
     results: {},
+    error: '',
 
     formattedResults: function () {
         var results = this.get( 'results' );
+        this.set( 'error', results.error || '' );
+
         var matches = results.matches || [];
         var query = results.query || '';
 
@@ -122,6 +125,9 @@ var view = new O.View({
                 }),
             ]),
             spinner,
+            el( 'div#error', {
+                text: O.bind( 'error', this )
+            }),
             el( 'pre', {
                 html: O.bind( 'formattedResults', this )
             })

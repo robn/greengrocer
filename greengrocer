@@ -718,10 +718,12 @@ sub collect_terms {
 sub search {
     my (%args) = @_;
 
-    my $info = join(' ', map { "$_=$args{$_}" } sort keys %args);
+    my $info = join(' ', map { ($args{$_} // '') ne '' ? "$_=$args{$_}" : () } qw(query start end));
 
     my $collector;
     my @terms;
+
+    my $error;
 
     greengrocer::run_search(
         start     => $args{start},
@@ -736,14 +738,14 @@ sub search {
         error => sub {
             my ($msg) = @_;
             $log->("search: $info [FAILED: $msg]");
-            die "E: $msg\n";
+            $error = $msg;
         },
     );
 
-    my $matches = $collector->matches;
+    my $matches = $collector ? $collector->matches : [];
     my $count = @$matches;
 
-    $log->(sprintf "search: %s [matches %d]", join(' ', map { ($args{$_} // '') ne '' ? "$_=$args{$_}" : () } qw(query start end)), scalar @$matches);
+    $log->(sprintf "search: %s [matches %d]", $info, $count);
 
     return {
         start   => $args{start},
@@ -752,5 +754,6 @@ sub search {
         terms   => \@terms,
         matches => $matches,
         count   => $count,
+        ($error ? (error => $error) : ()),
     };
 }
