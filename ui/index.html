@@ -53,11 +53,21 @@
     font-size: 18px;
     font-weight: 300;
   }
+  #query-box {
+    flex-shrink: 0;
+    display: flex;
+    flex-flow: row;
+  }
+  #query-box > * {
+    flex: 0 1 auto;
+  }
+  #query {
+    flex: 1 0 80%;
+  }
   .v-Text {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
-    width: 100%;
     border: 1px solid #aaa;
     border-radius: 3px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -68,9 +78,6 @@
     -moz-transition: background-color 1s;
     -o-transition: background-color 1s;
     transition: background-color 1s;
-  }
-  #search > .v-Text {
-    flex-shrink: 0;
   }
   .v-Text.is-disabled {
     background-color: #f6f6f6;

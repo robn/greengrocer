@@ -743,7 +743,7 @@ sub search {
     my $matches = $collector->matches;
     my $count = @$matches;
 
-    $log->(sprintf "search: %s [matches %d]", join(' ', map { "$_=$args{$_}" } sort keys %args), scalar @$matches);
+    $log->(sprintf "search: %s [matches %d]", join(' ', map { ($args{$_} // '') ne '' ? "$_=$args{$_}" : () } qw(query start end)), scalar @$matches);
 
     return {
         start   => $args{start},

@@ -4,20 +4,26 @@
 
 var view = new O.View({
 
-    allowTextSelection: true,
-
     id: 'search',
 
+    allowTextSelection: true,
+
     query: '',
+    start: '',
+    end:   '',
 
     submitQuery: function ( event ) {
         if ( O.DOMEvent.lookupKey( event ) === 'enter' ) {
-            this.set( 'currentQuery', this.get( 'query' ));
+            this.set( 'currentQuery', {
+                query: this.get( 'query' ),
+                start: this.get( 'start' ),
+                end:   this.get( 'end' ),
+            });
             event.stopPropagation();
         }
     }.on( 'keydown' ),
 
-    currentQuery: '',
+    currentQuery: {},
     currentRequest: null,
 
     runQuery: function () {
@@ -26,16 +32,22 @@ var view = new O.View({
             request.abort();
         }
 
-        var query = this.get( 'currentQuery' );
-        if ( query === '' ) {
+        var query = this.get( 'currentQuery' ) || {};
+        if ( query.query === '' ) {
             this.set( 'results', {} );
             return;
         }
 
+        console.log(query);
+
         var app = this;
         request = new O.HttpRequest({
             url: "/search",
-            data: "query=" + encodeURIComponent( this.get( 'currentQuery' )),
+            data: [
+                "query=" + encodeURIComponent( query.query ),
+                "start=" + encodeURIComponent( query.start ),
+                "end="   + encodeURIComponent( query.end ),
+            ].join('&'),
             success: function ( event ) {
                 // XXX error checks
                 app.set( 'currentRequest', null );
@@ -86,13 +98,29 @@ var view = new O.View({
         this.set( 'spinner', spinner );
         return [
             el( 'h1', [ 'Log search' ]),
-            new O.TextView({
-                multiline: false,
-                expanding: true,
-                value: new O.Binding({
-                    isTwoWay: true
-                }).from( 'query', this )
-            }),
+            el( 'div#query-box', [
+                new O.TextView({
+                    id: 'start',
+                    placeholder: 'start date',
+                    value: new O.Binding({
+                        isTwoWay: true
+                    }).from( 'start', this )
+                }),
+                new O.TextView({
+                    id: 'end',
+                    placeholder: 'end date',
+                    value: new O.Binding({
+                        isTwoWay: true
+                    }).from( 'end', this )
+                }),
+                new O.TextView({
+                    id: 'query',
+                    placeholder: 'query string',
+                    value: new O.Binding({
+                        isTwoWay: true
+                    }).from( 'query', this )
+                }),
+            ]),
             spinner,
             el( 'pre', {
                 html: O.bind( 'formattedResults', this )
