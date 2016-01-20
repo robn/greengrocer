@@ -184,8 +184,7 @@ sub search {
         end       => $opts{e},
         query     => join(' ', @ARGV),
         collector => sub {
-            my ($searcher, $query) = @_;
-            greengrocer::CLICollector->new(searcher => $searcher, json => !!$opts{j}),
+            greengrocer::CLICollector->new(searcher => shift, json => !!$opts{j}),
         },
         error => sub {
             my ($msg) = @_;
@@ -429,20 +428,18 @@ sub run_search {
         } ($INDEX_DIR, @EXTRA_INDEX_DIRS);
 
     my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
-    my $searcher = Lucy::Search::PolySearcher->new(
-        schema => schema(),
-        searchers => \@searchers,
-    );
 
-    my $collector = $args{collector}->($searcher, $query);
-
-    do {
-        no warnings 'uninitialized'; # working around slight bug inside Lucy
+    my @collectors = map {
+        my $searcher = $_;
+        my $collector = $args{collector}->($searcher);
         $searcher->collect(
             query => $query,
             collector => $collector,
         );
-    };
+        $collector;
+    } @searchers;
+
+    return ($query, @collectors);
 }
 
 sub usage {
@@ -719,21 +716,16 @@ sub search {
     my (%args) = @_;
 
     my $info = join(' ', map { ($args{$_} // '') ne '' ? "$_=$args{$_}" : () } qw(query start end));
-
     my $collector;
-    my @terms;
 
     my $error;
 
-    greengrocer::run_search(
+    my ($query, @collectors) = greengrocer::run_search(
         start     => $args{start},
         end       => $args{end},
         query     => $args{query},
         collector => sub {
-            my ($searcher, $query) = @_;
-            @terms = collect_terms($query);
-            $collector = greengrocer::ServerCollector->new(searcher => $searcher);
-            return $collector;
+            greengrocer::ServerCollector->new(searcher => shift);
         },
         error => sub {
             my ($msg) = @_;
@@ -742,7 +734,9 @@ sub search {
         },
     );
 
-    my $matches = $collector ? $collector->matches : [];
+    my @terms = collect_terms($query);
+
+    my $matches = [ map { @{$_->matches} } @collectors ];
     my $count = @$matches;
 
     $log->(sprintf "search: %s [matches %d]", $info, $count);
