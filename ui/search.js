@@ -38,8 +38,6 @@ var view = new O.View({
             return;
         }
 
-        console.log(query);
-
         var app = this;
         request = new O.HttpRequest({
             url: "/search",
