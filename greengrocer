@@ -403,20 +403,20 @@ sub schema {
 sub run_search {
     my (%args) = @_;
 
-    my $now = time;
-    my $start_date = time2str("%Y%m%d", str2time($args{start}) // $now);
-    my $end_date   = time2str("%Y%m%d", str2time($args{end}) // ($now+86400));
-    if ($start_date ge $end_date) {
-        $args{error}->("invalid date range $start_date - $end_date");
-        return;
-    }
-
     my $query_parser = Lucy::Search::QueryParser->new(
         schema         => schema(),
         default_boolop => 'AND',
     );
     $query_parser->set_heed_colons(1);
     my $query = $query_parser->parse($args{query} // '');
+
+    my $now = time;
+    my $start_date = time2str("%Y%m%d", str2time($args{start}) // $now);
+    my $end_date   = time2str("%Y%m%d", str2time($args{end}) // ($now+86400));
+    if ($start_date ge $end_date) {
+        $args{error}->("invalid date range $start_date - $end_date");
+        return ($query);
+    }
 
     my @indexes =
         grep {
