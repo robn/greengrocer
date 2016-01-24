@@ -358,7 +358,7 @@ sub web {
 }
 
 sub format_log {
-    sprintf "[greengrocer:%s] %s %s\n", $ACTION, time2str("%Y-%m-%dT%H:%M:%S", time), shift;
+    sprintf "[greengrocer:%s %s] %s %s\n", $ACTION, $$, time2str("%Y-%m-%dT%H:%M:%S", time), shift;
 }
 
 sub schema {
