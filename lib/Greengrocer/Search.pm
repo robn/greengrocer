@@ -36,7 +36,7 @@ sub run_search {
       $basename >= $start_date && $basename < $end_date;
     } map {
       path($_)->absolute->children
-    } @{$args{indexdir}};
+    } @{$args{index_dir}};
 
   my @searchers = map { Lucy::Search::IndexSearcher->new(index => $_) } @indexes;
 

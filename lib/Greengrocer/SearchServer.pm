@@ -12,7 +12,7 @@ our ($index_dir, $log);
 sub psgi {
   my ($class, %args) = @_;
 
-  $index_dir = $args{indexdir};
+  $index_dir = $args{index_dir};
   $log = $args{logger} // sub {};
 
   use_module("Atto");
@@ -50,7 +50,7 @@ sub search {
   my $error;
 
   my ($query, $start, $end, @collectors) = Greengrocer::Search::run_search(
-    indexdir  => $index_dir,
+    index_dir => $index_dir,
     start     => $args{start},
     end       => $args{end},
     query     => $args{query},

@@ -34,7 +34,7 @@ sub execute {
   my ($self, $opts, $args) = @_;
 
   Greengrocer::Search::run_search(
-    indexdir  => $self->app->global_options->{indexdir},
+    index_dir => $self->app->global_options->{indexdir},
     start     => $opts->{start},
     end       => $opts->{end},
     query     => join(' ', @$args),

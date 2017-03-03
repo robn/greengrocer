@@ -43,7 +43,7 @@ use Greengrocer::SearchServer;
 sub execute {
   my ($self, $opts, $args) = @_;
 
-  my $indexdir = $self->app->global_options->{indexdir};
+  my $index_dir = $self->app->global_options->{indexdir};
 
   use_module($_) for qw(Starlet::Server Plack::Builder Plack::Middleware::Redirect Plack::Middleware::Deflater);
 
@@ -57,7 +57,7 @@ sub execute {
   $builder->add_middleware('ContentLength');
   $builder->add_middleware('Static', path => sub { s{^/ui/$}{/ui/index.html}; m{^/ui/} }, root => './');
   $builder->mount('/', 
-    Greengrocer::SearchServer->psgi(indexdir => $indexdir, logger => $log)
+    Greengrocer::SearchServer->psgi(index_dir => $index_dir, logger => $log)
   );
 
   $server->run($builder->to_app);
