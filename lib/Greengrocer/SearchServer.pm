@@ -69,7 +69,7 @@ sub search {
   my $matches = [ map { @{$_->matches} } @collectors ];
   my $count = @$matches;
 
-  $log->(sprintf "search: %s [matches=%d]", $info, $count);
+  $log->(sprintf "search: %s [matches=%d terms=%s]", $info, $count, join(',', @terms));
 
   return {
     start   => $start,
