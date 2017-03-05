@@ -1,4 +1,5 @@
 package Greengrocer::Command::web;
+
 use Greengrocer -command;
 
 use 5.014;

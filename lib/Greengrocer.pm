@@ -1,4 +1,7 @@
 package Greengrocer;
+
+# ABSTRACT: A log collector and search engine
+
 use App::Cmd::Setup -app;
 
 use 5.014;

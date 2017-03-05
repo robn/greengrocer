@@ -1,4 +1,5 @@
 package Greengrocer::Command::index;
+
 use Greengrocer -command;
 
 use 5.014;
