@@ -13,8 +13,6 @@ sub abstract { "show log lines matching a query" }
 
 sub description { <<DESC }
 Searches for log lines matching the given query.
-
-You can specify multiple index dirs with -d /dir1:/dir2
 DESC
 
 sub usage_desc { "Usage: spy -d <index-dir> search [opts...] <query...>" }
@@ -27,6 +25,12 @@ sub opt_spec {
       { default => $DEFAULT_END }],
     [ "json|j"      => "JSON output" ],
   );
+}
+
+sub validate_args {
+  my ($self, $opts, $args) = @_;
+
+  $self->usage_error("Expected some query terms!") unless @$args;
 }
 
 use Log::Spy::Search;
