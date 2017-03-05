@@ -35,6 +35,7 @@ use Cpanel::JSON::XS;
 use Path::Tiny;
 use Time::HiRes qw(gettimeofday tv_interval);
 use Greengrocer::Schema;
+use Greengrocer::Log;
 
 sub execute {
   my ($self, $opts, $args) = @_;
@@ -104,7 +105,8 @@ sub execute {
   my $r_add    = $e_add / $n_items;
   my $r_commit = $e_commit / $n_items;
 
-  say sprintf("indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
+  my $log = Greengrocer::Log->logger("index");
+  $log->(sprintf "indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
 }
 
 1;
