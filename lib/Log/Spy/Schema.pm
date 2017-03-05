@@ -1,4 +1,4 @@
-package Greengrocer::Schema;
+package Log::Spy::Schema;
 
 use 5.014;
 use warnings;

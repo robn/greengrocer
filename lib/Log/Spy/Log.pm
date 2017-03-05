@@ -1,4 +1,4 @@
-package Greengrocer::Log;
+package Log::Spy::Log;
 
 use warnings;
 use strict;
@@ -11,7 +11,7 @@ sub logger {
 };
 
 sub format_log {
-  return sprintf "[greengrocer:%s %s] %s %s\n", shift, $$, time2str("%Y-%m-%dT%H:%M:%S", time), shift;
+  return sprintf "[spy%s %s] %s %s\n", shift, $$, time2str("%Y-%m-%dT%H:%M:%S", time), shift;
 }
 
 1;

@@ -1,6 +1,6 @@
-package Greengrocer::Command::optimize;
+package Log::Spy::Command::optimize;
 
-use Greengrocer -command;
+use Log::Spy -command;
 
 use 5.014;
 use warnings;
@@ -20,7 +20,7 @@ optimize an active index (that is, today's) or you'll likely end up losing
 incoming log lines.
 DESC
 
-sub usage_desc { "Usage: greengrocer -d <index-dir> optimize <indexes...>" }
+sub usage_desc { "Usage: spy -d <index-dir> optimize <indexes...>" }
 
 sub validate_args {
   my ($self, $opts, $args) = @_;
@@ -29,8 +29,8 @@ sub validate_args {
 }
 
 use Lucy;
-use Greengrocer::Schema;
-use Greengrocer::Log;
+use Log::Spy::Schema;
+use Log::Spy::Log;
 use Path::Tiny;
 
 sub execute {
@@ -38,13 +38,13 @@ sub execute {
 
   my ($index_dir) = @{$self->app->global_options->{indexdir}};
 
-  my $log = Greengrocer::Log->logger("optimize");
+  my $log = Log::Spy::Log->logger("optimize");
 
   for my $index (@$args) {
     my $indexer = eval {
       Lucy::Index::Indexer->new(
         index  => path($index_dir, $index),
-        schema => Greengrocer::Schema::schema(),
+        schema => Log::Spy::Schema::schema(),
       );
     };
     if ($@) {

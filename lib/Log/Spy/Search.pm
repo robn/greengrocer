@@ -1,10 +1,10 @@
-package Greengrocer::Search;
+package Log::Spy::Search;
 
 use 5.014;
 use warnings;
 use strict;
 
-use Greengrocer::Schema;
+use Log::Spy::Schema;
 
 use Lucy;
 use Path::Tiny;
@@ -15,7 +15,7 @@ sub run_search {
   my (%args) = @_;
 
   my $query_parser = Lucy::Search::QueryParser->new(
-    schema         => Greengrocer::Schema::schema(),
+    schema         => Log::Spy::Schema::schema(),
     default_boolop => 'AND',
   );
   $query_parser->set_heed_colons(1);

@@ -1,11 +1,11 @@
-package Greengrocer::SearchServer;
+package Log::Spy::SearchServer;
 
 use warnings;
 use strict;
 
 use Module::Runtime qw(use_module);
 use Lucy;
-use Greengrocer::Search;
+use Log::Spy::Search;
 
 our ($index_dir, $log);
 
@@ -49,13 +49,13 @@ sub search {
 
   my $error;
 
-  my ($query, $start, $end, @collectors) = Greengrocer::Search::run_search(
+  my ($query, $start, $end, @collectors) = Log::Spy::Search::run_search(
     index_dir => $index_dir,
     start     => $args{start},
     end       => $args{end},
     query     => $args{query},
     collector => sub {
-      Greengrocer::SearchServer::Collector->new(searcher => shift);
+      Log::Spy::SearchServer::Collector->new(searcher => shift);
     },
     error => sub {
       my ($msg) = @_;
@@ -82,7 +82,7 @@ sub search {
   };
 }
 
-package Greengrocer::SearchServer::Collector {
+package Log::Spy::SearchServer::Collector {
 
 use parent qw(Lucy::Search::Collector);
 

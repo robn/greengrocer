@@ -1,6 +1,6 @@
-package Greengrocer::Command::web;
+package Log::Spy::Command::web;
 
-use Greengrocer -command;
+use Log::Spy -command;
 
 use 5.014;
 use warnings;
@@ -26,7 +26,7 @@ Example:
     \$ curl http://127.0.0.1:5515/search?query=info
 DESC
 
-sub usage_desc { "Usage: greengrocer -d <index-dir> web [opts...]" }
+sub usage_desc { "Usage: spy -d <index-dir> web [opts...]" }
 
 sub opt_spec {
   return (
@@ -38,8 +38,8 @@ sub opt_spec {
 }
 
 use Module::Runtime qw(use_module);
-use Greengrocer::Log;
-use Greengrocer::SearchServer;
+use Log::Spy::Log;
+use Log::Spy::SearchServer;
 
 sub execute {
   my ($self, $opts, $args) = @_;
@@ -50,7 +50,7 @@ sub execute {
 
   my $server = Starlet::Server->new(host => $opts->{ip}, port => $opts->{port});
 
-  my $log = Greengrocer::Log->logger("web");
+  my $log = Log::Spy::Log->logger("web");
 
   my $builder = Plack::Builder->new;
   $builder->add_middleware('Redirect', url_patterns => [ '^/$' => ['/ui/', 302] ]);
@@ -58,7 +58,7 @@ sub execute {
   $builder->add_middleware('ContentLength');
   $builder->add_middleware('Static', path => sub { s{^/ui/$}{/ui/index.html}; m{^/ui/} }, root => './');
   $builder->mount('/', 
-    Greengrocer::SearchServer->psgi(index_dir => $index_dir, logger => $log)
+    Log::Spy::SearchServer->psgi(index_dir => $index_dir, logger => $log)
   );
 
   $server->run($builder->to_app);

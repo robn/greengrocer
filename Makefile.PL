@@ -12,10 +12,13 @@ my %WriteMakefileArgs = (
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => 0
   },
-  "DISTNAME" => "Greengrocer",
+  "DISTNAME" => "Log-Spy",
+  "EXE_FILES" => [
+    "bin/spy"
+  ],
   "LICENSE" => "perl",
   "MIN_PERL_VERSION" => "5.014",
-  "NAME" => "Greengrocer",
+  "NAME" => "Log::Spy",
   "PREREQ_PM" => {
     "App::Cmd::Setup" => 0,
     "Cpanel::JSON::XS" => 0,

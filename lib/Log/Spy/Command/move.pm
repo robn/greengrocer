@@ -1,6 +1,6 @@
-package Greengrocer::Command::move;
+package Log::Spy::Command::move;
 
-use Greengrocer -command;
+use Log::Spy -command;
 
 use 5.014;
 use warnings;
@@ -14,7 +14,7 @@ original. If no indexes are specified, all indexes except the current day's
 indexes are moved.
 DESC
 
-sub usage_desc { "Usage: greengrocer -d <index-dir> move [opts...] <target-index-dir> [indexes...]" }
+sub usage_desc { "Usage: spy -d <index-dir> move [opts...] <target-index-dir> [indexes...]" }
 
 sub opt_spec {
   return (
@@ -31,8 +31,8 @@ sub validate_args {
 }
 
 use Lucy;
-use Greengrocer::Log;
-use Greengrocer::Schema;
+use Log::Spy::Log;
+use Log::Spy::Schema;
 use Path::Tiny;
 use Date::Format qw(time2str);
 
@@ -104,7 +104,7 @@ EOF
     %target_map = map { $_ => path($target_temp_dir, $_)->absolute } @source_indexes;
   }
 
-  my $log = Greengrocer::Log->logger("move");
+  my $log = Log::Spy::Log->logger("move");
 
   for my $source_index (sort keys %target_map) {
     my $source_index_path = path($index_dir, $source_index);
@@ -113,7 +113,7 @@ EOF
     my $indexer = eval {
       Lucy::Index::Indexer->new(
         index  => $target_index_path,
-        schema => Greengrocer::Schema::schema(),
+        schema => Log::Spy::Schema::schema(),
         create => 1,
       );
     };

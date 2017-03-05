@@ -3,5 +3,5 @@
 use warnings;
 use strict;
 
-use Greengrocer;
-Greengrocer->run;
+use Log::Spy;
+Log::Spy->run;

@@ -1,6 +1,6 @@
-package Greengrocer::Command::search;
+package Log::Spy::Command::search;
 
-use Greengrocer -command;
+use Log::Spy -command;
 
 use 5.014;
 use warnings;
@@ -17,7 +17,7 @@ Searches for log lines matching the given query.
 You can specify multiple index dirs with -d /dir1:/dir2
 DESC
 
-sub usage_desc { "Usage: greengrocer -d <index-dir> search [opts...] <query...>" }
+sub usage_desc { "Usage: spy -d <index-dir> search [opts...] <query...>" }
 
 sub opt_spec {
   return (
@@ -29,18 +29,18 @@ sub opt_spec {
   );
 }
 
-use Greengrocer::Search;
+use Log::Spy::Search;
 
 sub execute {
   my ($self, $opts, $args) = @_;
 
-  Greengrocer::Search::run_search(
+  Log::Spy::Search::run_search(
     index_dir => $self->app->global_options->{indexdir},
     start     => $opts->{start},
     end       => $opts->{end},
     query     => join(' ', @$args),
     collector => sub {
-      Greengrocer::Command::search::Collector->new(searcher => shift, json => !!$opts->{json}),
+      Log::Spy::Command::search::Collector->new(searcher => shift, json => !!$opts->{json}),
     },
     error => sub {
       my ($msg) = @_;
@@ -49,7 +49,7 @@ sub execute {
   );
 }
 
-package Greengrocer::Command::search::Collector {
+package Log::Spy::Command::search::Collector {
 
 use parent qw(Lucy::Search::Collector);
 use Cpanel::JSON::XS;

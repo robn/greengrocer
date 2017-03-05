@@ -1,6 +1,6 @@
-package Greengrocer::Command::index;
+package Log::Spy::Command::index;
 
-use Greengrocer -command;
+use Log::Spy -command;
 
 use 5.014;
 use warnings;
@@ -13,10 +13,10 @@ sub abstract { "add a file of log events to the index" }
 sub description { <<DESC }
 Adds a file of log events to the index.
 
-Events are one JSON object per line. The format is described in the Greengrocer docs.
+Events are one JSON object per line. The format is described in the Log::Spy docs.
 DESC
 
-sub usage_desc { "Usage: greengrocer -d <index-dir> index [opts...] <file...>" }
+sub usage_desc { "Usage: spy -d <index-dir> index [opts...] <file...>" }
 
 sub opt_spec {
   return (
@@ -34,8 +34,8 @@ sub validate_args {
 use Cpanel::JSON::XS;
 use Path::Tiny;
 use Time::HiRes qw(gettimeofday tv_interval);
-use Greengrocer::Schema;
-use Greengrocer::Log;
+use Log::Spy::Schema;
+use Log::Spy::Log;
 
 sub execute {
   my ($self, $opts, $args) = @_;
@@ -79,7 +79,7 @@ sub execute {
 
       ($indexers{$key} ||= Lucy::Index::Indexer->new(
           index  => path($index_dir, $key),
-          schema => Greengrocer::Schema::schema(),
+          schema => Log::Spy::Schema::schema(),
           create => 1,
       ))->add_doc($data);
 
@@ -105,7 +105,7 @@ sub execute {
   my $r_add    = $e_add / $n_items;
   my $r_commit = $e_commit / $n_items;
 
-  my $log = Greengrocer::Log->logger("index");
+  my $log = Log::Spy::Log->logger("index");
   $log->(sprintf "indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
 }
 

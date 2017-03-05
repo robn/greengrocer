@@ -1,4 +1,4 @@
-package Greengrocer;
+package Log::Spy;
 
 # ABSTRACT: A log collector and search engine
 
@@ -8,7 +8,7 @@ use 5.014;
 use warnings;
 use strict;
 
-sub usage_desc { "Usage: greengrocer -d <index-dir> action [opts...] [args...]" }
+sub usage_desc { "Usage: spy -d <index-dir> action [opts...] [args...]" }
 
 sub global_opt_spec {
   return (
