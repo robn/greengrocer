@@ -55,7 +55,11 @@ sub execute {
       or warn "E: couldn't open '$file' for read: $!\n" and next;
 
     while (my $line = <$fh>) {
-      my $data = decode_json($line); # XXX error
+      my $data = eval { decode_json($line) };
+      if ($@) {
+        warn "E: malformed JSON: $line";
+        next;
+      }
 
       @$data{qw(program pid)} = delete($data->{syslogtag}) =~ m/^([^\[]+)(?:\[(\d+)\])?:$/;
       $data->{pid} //= '';
