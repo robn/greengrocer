@@ -49,12 +49,12 @@ package Log::Spy::Schema::Architecture {
 
 use parent 'Lucy::Plan::Architecture';
 
-use LucyX::Index::ZlibDocWriter;
-use LucyX::Index::ZlibDocReader;
+use LucyX::Index::ZstdDocWriter;
+use LucyX::Index::ZstdDocReader;
 
 sub register_doc_writer {
   my ($self, $seg_writer) = @_;
-  my $doc_writer = LucyX::Index::ZlibDocWriter->new(
+  my $doc_writer = LucyX::Index::ZstdDocWriter->new(
     schema     => $seg_writer->get_schema,
     snapshot   => $seg_writer->get_snapshot,
     segment    => $seg_writer->get_segment,
@@ -69,7 +69,7 @@ sub register_doc_writer {
 
 sub register_doc_reader {
   my ( $self, $seg_reader ) = @_;
-  my $doc_reader = LucyX::Index::ZlibDocReader->new(
+  my $doc_reader = LucyX::Index::ZstdDocReader->new(
     schema   => $seg_reader->get_schema,
     folder   => $seg_reader->get_folder,
     segments => $seg_reader->get_segments,
