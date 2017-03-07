@@ -4,9 +4,16 @@ use warnings;
 use strict;
 
 use Date::Format qw(time2str);
+use Sys::Syslog;
 
 sub logger {
-  my ($class, $action) = @_;
+  my ($class, $action, %opts) = @_;
+
+  if ($opts{syslog}) {
+    openlog("logspy $action", "ndelay,pid", "local5");
+    return sub { syslog("info", shift) };
+  }
+
   return sub { print STDERR format_log($action, shift) };
 };
 

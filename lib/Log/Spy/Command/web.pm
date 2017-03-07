@@ -50,7 +50,7 @@ sub execute {
 
   my $server = Starlet::Server->new(host => $opts->{ip}, port => $opts->{port});
 
-  my $log = Log::Spy::Log->logger("web");
+  my $log = Log::Spy::Log->logger("web", syslog => !!$self->app->global_options->{syslog});
 
   my $builder = Plack::Builder->new;
   $builder->add_middleware('Redirect', url_patterns => [ '^/$' => ['/ui/', 302] ]);

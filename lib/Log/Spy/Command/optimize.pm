@@ -38,7 +38,7 @@ sub execute {
 
   my ($index_dir) = @{$self->app->global_options->{indexdir}};
 
-  my $log = Log::Spy::Log->logger("optimize");
+  my $log = Log::Spy::Log->logger("optimize", syslog => !!$self->app->global_options->{syslog});
 
   for my $index (@$args) {
     my $indexer = eval {

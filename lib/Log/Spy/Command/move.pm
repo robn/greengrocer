@@ -104,7 +104,7 @@ EOF
     %target_map = map { $_ => path($target_temp_dir, $_)->absolute } @source_indexes;
   }
 
-  my $log = Log::Spy::Log->logger("move");
+  my $log = Log::Spy::Log->logger("move", syslog => !!$self->app->global_options->{syslog});
 
   for my $source_index (sort keys %target_map) {
     my $source_index_path = path($index_dir, $source_index);

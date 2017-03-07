@@ -109,7 +109,7 @@ sub execute {
   my $r_add    = $e_add / $n_items;
   my $r_commit = $e_commit / $n_items;
 
-  my $log = Log::Spy::Log->logger("index");
+  my $log = Log::Spy::Log->logger("index", syslog => !!$self->app->global_options->{syslog});
   $log->(sprintf "indexed %d lines [add %.3f (%.6f) commit %.3f (%.6f)]", $n_items, $e_add, $r_add, $e_commit, $r_commit);
 }
 
