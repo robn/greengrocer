@@ -10,7 +10,7 @@ sub logger {
   my ($class, $action, %opts) = @_;
 
   if ($opts{syslog}) {
-    openlog("logspy $action", "ndelay,pid", "local5");
+    openlog("logspy/$action", "ndelay,pid", "local5");
     return sub { syslog("info", shift) };
   }
 
